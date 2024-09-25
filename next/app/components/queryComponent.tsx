@@ -55,7 +55,7 @@ const QueryComponent: React.FC = () => {
   };
 
   return (
-    <div className="p-8 py-20 h-screen gap-4 grid grid-cols-3 grid-rows-3">
+    <div className="p-8 pt-20 h-screen gap-4 grid grid-cols-3 grid-rows-3">
       <section className="col-span-2">
         <h1 className="text-2xl font-bold mb-4">Posez-moi une question</h1>
         <form onSubmit={handleSubmit}>
@@ -105,16 +105,16 @@ const QueryComponent: React.FC = () => {
             <ResponseComponent llmResponse={mutation.data.llm_response} />
           </section>
         </>
-      ):mutation.isPending ? (
+      ) : mutation.isPending ? (
         <>
-            <section className="col-span-1 row-span-3 h-full opacity-10 ">
-                <SourcesComponent retrieverResults={[]} />
-            </section>
-            <section className="col-span-2 row-span-2 h-full opacity-10">
-                <ResponseComponent llmResponse={""} />
-            </section>
+          <section className="col-span-1 row-span-3 h-full opacity-10 ">
+            <SourcesComponent retrieverResults={[]} />
+          </section>
+          <section className="col-span-2 row-span-2 h-full opacity-10">
+            <ResponseComponent llmResponse={""} />
+          </section>
         </>
-      ):null}
+      ) : null}
     </div>
   );
 };
