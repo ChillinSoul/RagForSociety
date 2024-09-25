@@ -1,0 +1,6 @@
+fastapi==0.68.0
+pydantic==1.8.2
+uvicorn==0.15.0
+langchain==0.0.184
+chromadb==0.3.21
+ollama==0.1.0
