@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useMutation, UseMutationResult } from "@tanstack/react-query";
 import SourcesComponent from "./sourcesComponent";
 import ResponseComponent from "./responseComponent";
+import McqComponent from "./mcqComponent";
 // Define the expected API response structure
 interface ApiResponse {
   retriever_results: Array<{
@@ -14,6 +15,14 @@ interface ApiResponse {
     score: number;
   }>;
   llm_response: string;
+
+  mc_response: {
+    questions: 
+    Array<{
+        text: string;
+        options: string[];
+        }>;
+};
 }
 
 // Function to fetch the response from the API
@@ -32,12 +41,15 @@ const fetchResponse = async (question: string): Promise<ApiResponse> => {
 
   const data: ApiResponse = await res.json(); // Expecting a JSON response
   return data;
+ 
 };
 
 // React component with Tailwind and DaisyUI styling
 const QueryComponent: React.FC = () => {
   const [query, setQuery] = useState<string>("");
   const [showResponse, setShowResponse] = useState<boolean>(false);
+  const [showMcq, setShowMcq] = useState<boolean>(false);
+
 
   const mutation: UseMutationResult<ApiResponse, Error, string> = useMutation({
     mutationFn: fetchResponse,
@@ -55,8 +67,8 @@ const QueryComponent: React.FC = () => {
   };
 
   return (
-    <div className="p-8 pt-20 h-screen gap-4 grid grid-cols-3 grid-rows-3">
-      <section className="col-span-2">
+    <div className="p-8 pt-20 h-screen gap-4 grid grid-cols-3 grid-rows-9">
+      <section className="col-span-2 row-span-2">
         <h1 className="text-2xl font-bold mb-4">Posez-moi une question</h1>
         <form onSubmit={handleSubmit}>
           <div className="form-control">
@@ -96,13 +108,21 @@ const QueryComponent: React.FC = () => {
 
       {mutation.isSuccess && showResponse && mutation.data ? (
         <>
-          <section className="col-span-1 row-span-3 h-full">
+          <section className="col-span-1 row-span-9 h-full">
             <SourcesComponent
               retrieverResults={mutation.data.retriever_results}
             />
           </section>
-          <section className="col-span-2 row-span-2 h-full">
-            <ResponseComponent llmResponse={mutation.data.llm_response} />
+          <button className="btn btn-primary col-span-2 row-span-1" onClick={() => setShowMcq(!showMcq)}>
+                {showMcq ? "Afficher la réponse" : "Ameliorer la réponse avec des questions"}
+            </button>
+          <section className="col-span-2 row-span-6 h-full">
+            
+            {showMcq ? (
+                <McqComponent questions={mutation.data.mc_response.questions} />
+            ) : (
+                <ResponseComponent llmResponse={mutation.data.llm_response} />
+            )}
           </section>
         </>
       ) : mutation.isPending ? (

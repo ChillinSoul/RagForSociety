@@ -3,9 +3,14 @@ interface ResponseProps {
 }
 
 const ResponseComponent: React.FC<ResponseProps> = ({ llmResponse }) => {
-  const formatLlmResponse = (response: string) => {
-    return response.split("\n").map((line, index) => <p key={index}>{line}</p>);
-  };
+    const formatLlmResponse = (response: string) => {
+        const formattedResponse = response.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+        let resp = formattedResponse.split("\n").map((line, index) => (
+          <p key={index} dangerouslySetInnerHTML={{ __html: line }}></p>
+        ));
+      
+        return resp;
+      };
 
   return (
     <div className="flex-1 h-full card ">

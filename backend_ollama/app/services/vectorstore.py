@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 def initialize_vectorstore(docs: List[Document], persist_directory: str = "./chroma", batch_size: int = 100):
     logger.info(f"Starting vectorstore initialization with {len(docs)} documents")
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200, separators=["\n\n","\n", ". ", "?", "!"])
     splits = text_splitter.split_documents(docs)
     logger.info(f"Split documents into {len(splits)} chunks")
 

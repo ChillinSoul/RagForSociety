@@ -9,7 +9,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 def initialize_rag_chain(retriever):
-    template = """Répondez à la question uniquement en vous basant sur le contexte suivant:
+    template = """soit concis. Si tu n'as pas de reponse dit le.
+      Si tu as besoins que l'auteur reformule la question, aide le en proposant plusieur choix.
+      Répond à la question uniquement en te basant sur le contexte suivant:
     {context}
 
     Question : {question}

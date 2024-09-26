@@ -8,6 +8,7 @@ from app.routers import scraped_data, rag_chain
 from app.services.data_loader import load_documents
 from app.services.vectorstore import initialize_vectorstore
 from app.services.rag_chain import initialize_rag_chain
+from app.services.multiple_choice_chain import initialize_multiple_choice_chain
 import logging
 
 load_dotenv(".env")
@@ -49,7 +50,8 @@ async def startup_event():
         
         logger.info("Initializing RAG chain")
         retrieval_chain, final_chain = initialize_rag_chain(retriever)
-        rag_chain.initialize_rag_chain_global(retrieval_chain, final_chain)
+        mc_chain = initialize_multiple_choice_chain()
+        rag_chain.initialize_rag_chain_global(retrieval_chain, final_chain, mc_chain)
         
         logger.info("Application initialized successfully")
     except Exception as e:
