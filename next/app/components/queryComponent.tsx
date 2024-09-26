@@ -5,7 +5,7 @@ import { useMutation, UseMutationResult } from "@tanstack/react-query";
 import SourcesComponent from "./sourcesComponent";
 import ResponseComponent from "./responseComponent";
 import McqComponent from "./mcqComponent";
-// Define the expected API response structure
+
 interface ApiResponse {
   retriever_results: Array<{
     page_content: string;
@@ -17,15 +17,18 @@ interface ApiResponse {
   llm_response: string;
 
   mc_response: {
-    questions: 
-    Array<{
-        text: string;
-        options: string[];
-        }>;
-};
+    questions: Array<{
+      text: string;
+      options: string[];
+    }>;
+  };
 }
 
-// Function to fetch the response from the API
+interface qnr {
+  question: string;
+  reponse: string;
+}
+
 const fetchResponse = async (question: string): Promise<ApiResponse> => {
   const res = await fetch("http://127.0.0.1:8000/get-response/", {
     method: "POST",
@@ -39,20 +42,45 @@ const fetchResponse = async (question: string): Promise<ApiResponse> => {
     throw new Error("Failed to fetch response");
   }
 
-  const data: ApiResponse = await res.json(); // Expecting a JSON response
+  const data: ApiResponse = await res.json();
   return data;
- 
 };
 
-// React component with Tailwind and DaisyUI styling
+const fetchResponseBNF = async (question: string, questionaire: Array<qnr>): Promise<ApiResponse> => {
+  const res = await fetch("http://127.0.0.1:8000/get-response-bnf/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ question, questionaire }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch response");
+  }
+
+  const data: ApiResponse = await res.json();
+  return data;
+};
+
 const QueryComponent: React.FC = () => {
   const [query, setQuery] = useState<string>("");
   const [showResponse, setShowResponse] = useState<boolean>(false);
   const [showMcq, setShowMcq] = useState<boolean>(false);
+  const [questionaireAnswered, setQuestionaireAnswered] = useState<boolean>(false);
 
-
-  const mutation: UseMutationResult<ApiResponse, Error, string> = useMutation({
+  // First mutation (Initial question submission)
+  const responseMutation: UseMutationResult<ApiResponse, Error, string> = useMutation({
     mutationFn: fetchResponse,
+    onSuccess: () => {
+      setShowResponse(true);
+      setShowMcq(false);
+    },
+  });
+
+  // Second mutation (MCQ submission)
+  const responseBNFMutation: UseMutationResult<ApiResponse, Error, { question: string; questionaire: Array<qnr> }> = useMutation({
+    mutationFn: ({ question, questionaire }) => fetchResponseBNF(question, questionaire),
     onSuccess: () => {
       setShowResponse(true);
     },
@@ -62,7 +90,19 @@ const QueryComponent: React.FC = () => {
     e.preventDefault();
     setShowResponse(false);
     if (query) {
-      mutation.mutate(query);
+      // Reset responseBNFMutation whenever a new query is submitted
+      responseBNFMutation.reset();
+      responseMutation.mutate(query);
+      setQuestionaireAnswered(false);
+    }
+  };
+
+  const handleMCQSubmit = (questionaire: Array<qnr>) => {
+    setShowResponse(false);
+    if (query) {
+      responseBNFMutation.mutate({ question: query, questionaire });
+      setShowMcq(false);
+      setQuestionaireAnswered(true);
     }
   };
 
@@ -89,52 +129,61 @@ const QueryComponent: React.FC = () => {
           <button
             type="submit"
             className="btn btn-secondary mt-4"
-            disabled={mutation.isPending}
+            disabled={responseMutation.isPending || responseBNFMutation.isPending}
           >
             Valider
           </button>
         </form>
 
-        {mutation.isPending && <progress className="progress"></progress>}
+        {(responseMutation.isPending|| responseBNFMutation.isPending )&& <progress className="progress"></progress>}
 
-        {mutation.isError && (
+        {responseMutation.isError && (
           <div className="alert alert-error mt-4">
             <span>
-              Error: {mutation.error?.message || "Oops il y a eu une erreur"}
+              Error: {responseMutation.error?.message || "Oops il y a eu une erreur"}
             </span>
           </div>
         )}
       </section>
 
-      {mutation.isSuccess && showResponse && mutation.data ? (
+      {(responseMutation.isSuccess || responseBNFMutation.isSuccess) && showResponse && (
         <>
           <section className="col-span-1 row-span-9 h-full">
             <SourcesComponent
-              retrieverResults={mutation.data.retriever_results}
+              retrieverResults={
+                responseBNFMutation.isSuccess
+                  ? responseBNFMutation.data?.retriever_results || []
+                  : responseMutation.data?.retriever_results || []
+              }
             />
           </section>
-          <button className="btn btn-primary col-span-2 row-span-1" onClick={() => setShowMcq(!showMcq)}>
-                {showMcq ? "Afficher la réponse" : "Ameliorer la réponse avec des questions"}
+          {!questionaireAnswered && (
+            <button className="btn btn-primary col-span-2 row-span-1" onClick={() => setShowMcq(!showMcq)}>
+              {showMcq ? "Afficher la réponse" : "Améliorer la réponse avec des questions"}
             </button>
+          )}
           <section className="col-span-2 row-span-6 h-full">
-            
             {showMcq ? (
-                <McqComponent questions={mutation.data.mc_response.questions} />
+              <McqComponent
+                questions={
+                  responseBNFMutation.isSuccess
+                    ? responseBNFMutation.data?.mc_response.questions || []
+                    : responseMutation.data?.mc_response.questions || []
+                }
+                onSubmit={handleMCQSubmit}
+              />
             ) : (
-                <ResponseComponent llmResponse={mutation.data.llm_response} />
+              <ResponseComponent
+                llmResponse={
+                  responseBNFMutation.isSuccess
+                    ? responseBNFMutation.data?.llm_response || ""
+                    : responseMutation.data?.llm_response || ""
+                }
+              />
             )}
           </section>
         </>
-      ) : mutation.isPending ? (
-        <>
-          <section className="col-span-1 row-span-3 h-full opacity-10 ">
-            <SourcesComponent retrieverResults={[]} />
-          </section>
-          <section className="col-span-2 row-span-2 h-full opacity-10">
-            <ResponseComponent llmResponse={""} />
-          </section>
-        </>
-      ) : null}
+      )}
     </div>
   );
 };

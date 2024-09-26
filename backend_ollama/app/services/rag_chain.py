@@ -9,16 +9,33 @@ import logging
 logger = logging.getLogger(__name__)
 
 def initialize_rag_chain(retriever):
+
+    llm = Ollama(model="llama3.1")
     template = """soit concis. Si tu n'as pas de reponse dit le.
-      Si tu as besoins que l'auteur reformule la question, aide le en proposant plusieur choix.
-      Répond à la question uniquement en te basant sur le contexte suivant:
+    Si tu as besoins que l'auteur reformule la question, aide le en proposant plusieur choix.
+    Répond à la question uniquement en te basant sur le contexte suivant:
     {context}
 
     Question : {question}
     """
 
     prompt = ChatPromptTemplate.from_template(template)
-    llm = Ollama(model="llama3.1")
+
+    back_and_forth_template = """Tu es un assistant IA qui aide un utilisateur à poser une question plus précise.
+    Tu as besoin de reformuler la question de l'utilisateur pour obtenir une réponse plus précise.
+    tu as acces à un questionaire remplis par l'utilisateur pour t'aider à reformuler la question.
+    tu as acces à des documents pertinents pour t'aider à reformuler la question.
+
+    documents : {context}
+
+    Question : {question}
+
+    questionaire: {questionaire}
+
+    reformule la question de l'utilisateur pour obtenir une réponse plus précise.
+    """
+
+    back_and_forth_prompt = ChatPromptTemplate.from_template(back_and_forth_template)
 
     multi_query_template = """Vous êtes un assistant modèle de langage IA. 
     Votre tâche est de générer cinq versions différentes de la question posée par l'utilisateur 
@@ -27,6 +44,7 @@ def initialize_rag_chain(retriever):
     votre objectif est d'aider l'utilisateur à surmonter certaines des limites de la recherche de similarité basée sur la distance. 
     Fournissez ces questions alternatives, séparées par des sauts de ligne. ne rends que les quetions sans text supplémentaire.
     Question originale : {question}"""
+
     prompt_perspectives = ChatPromptTemplate.from_template(multi_query_template)
 
     def log_llm_message(message):
@@ -39,6 +57,13 @@ def initialize_rag_chain(retriever):
         | llm 
         | StrOutputParser() 
         | (lambda x: x.split("\n"))
+    )
+
+    generate_query_back_and_forth = (
+        back_and_forth_prompt 
+        | log_llm_message 
+        | llm 
+        | StrOutputParser() 
     )
 
     def reciprocal_rank_fusion(results: list[list], k=60):
@@ -87,4 +112,4 @@ def initialize_rag_chain(retriever):
     )
 
     logger.info("RAG chain initialized successfully")
-    return retrieval_chain, final_chain
+    return retrieval_chain, final_chain, generate_query_back_and_forth

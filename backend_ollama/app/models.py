@@ -12,3 +12,11 @@ class ScrapedData(BaseModel):
 
 class QuestionRequest(BaseModel):
     question: str
+
+class Questionaire():
+    question: str
+    reponse: str
+
+class QuestionBackAndForthRequest(BaseModel):
+    question: str
+    questionaire: List[dict[str, str]]

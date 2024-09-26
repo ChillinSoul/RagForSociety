@@ -7,9 +7,10 @@ interface McqProps {
     text: string;
     options: string[];
   }>;
+  onSubmit: (results: Array<{ question: string; reponse: string }>) => void;
 }
 
-const McqComponent = ({ questions }: McqProps) => {
+const McqComponent = ({ questions, onSubmit }: McqProps) => {
   const [answers, setAnswers] = useState<string[]>(Array(questions.length).fill(''));
   const [buttonText, setButtonText] = useState<string>('Valider');
 
@@ -27,7 +28,7 @@ const McqComponent = ({ questions }: McqProps) => {
       reponse: answers[index] || 'pas de réponse selectionnée',
     }));
     console.log(results);
-
+    onSubmit(results);
     // Change the button text to 'Réponse envoyée'
     setButtonText('Réponse envoyée');
   };
