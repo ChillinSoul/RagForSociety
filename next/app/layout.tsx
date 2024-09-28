@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" data-theme="business">
+    <html lang="fr" data-theme="cyberpunk">
       <body className={`${robotoMono.variable} antialiased bg-base-100`}>
         <Navbar />
         {children}

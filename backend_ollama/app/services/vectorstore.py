@@ -14,7 +14,7 @@ def initialize_vectorstore(docs: List[Document], persist_directory: str = "./chr
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200, separators=["\n\n","\n", ". ", "?", "!"])
     splits = text_splitter.split_documents(docs)
     logger.info(f"Split documents into {len(splits)} chunks")
-
+    
     local_embeddings = LocalEmbeddings()
 
     # Check if we have a checkpoint file
