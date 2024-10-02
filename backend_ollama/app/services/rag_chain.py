@@ -4,6 +4,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_groq import ChatGroq
 from langchain.load import dumps, loads
+from langchain_groq import ChatGroq
 from operator import itemgetter
 import logging
 
@@ -11,9 +12,10 @@ logger = logging.getLogger(__name__)
 
 def initialize_rag_chain(retriever):
 
-    # llm = Ollama(model="llama3.1")
-    # llm = ChatGroq(model="llama-3.2-90b-text-preview")
-    llm = ChatGroq(model="llama-3.1-70b-versatile")
+    llm = Ollama(model="llama3.1")
+
+    #llm = ChatGroq( model="llama-3.2-11b-text-preview")
+
     template = """soit concis. Si tu n'as pas de reponse dit le.
     Si tu as besoins que l'auteur reformule la question, aide le en proposant plusieur choix.
     Répond à la question uniquement en te basant sur le contexte suivant:
@@ -80,10 +82,9 @@ def initialize_rag_chain(retriever):
 
         reranked_results = [
             (loads(doc), score)
-            for doc, score in sorted(fused_scores.items(), key=lambda x: x[1], reverse=True)
+            for doc, score in sorted(fused_scores.items(), key=lambda x: x[1], reverse=False)
         ]
-
-        return reranked_results
+        return reranked_results[:5]
 
     retrieval_chain = generate_queries | retriever.map() | reciprocal_rank_fusion
 
