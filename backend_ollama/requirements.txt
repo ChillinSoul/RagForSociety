@@ -1,6 +1,7 @@
-fastapi==0.68.0
-pydantic==1.8.2
-uvicorn==0.15.0
-langchain==0.0.184
-chromadb==0.3.21
-ollama==0.1.0
+fastapi==0.115.0
+langchain==0.3.1
+langchain_community==0.3.1
+langchain_core==0.3.7
+pydantic==2.9.2
+python-dotenv==1.0.1
+uvicorn==0.31.0

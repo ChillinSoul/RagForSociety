@@ -1,5 +1,6 @@
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.llms import Ollama
+from langchain_groq import ChatGroq
 import json
 import re
 import logging
@@ -48,7 +49,9 @@ def initialize_multiple_choice_chain():
 """
     
     mc_prompt = ChatPromptTemplate.from_template(mc_template)
-    llm = Ollama(model="llama3.1")
+    # llm = Ollama(model="llama3.1")
+    # llm = ChatGroq(model="llama-3.2-90b-text-preview")
+    llm = ChatGroq(model="llama-3.1-70b-versatile")
 
     def parse_mc_response(mc_response: str) -> dict:
         """

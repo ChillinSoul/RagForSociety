@@ -2,6 +2,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_community.llms import Ollama
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
+from langchain_groq import ChatGroq
 from langchain.load import dumps, loads
 from operator import itemgetter
 import logging
@@ -10,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 def initialize_rag_chain(retriever):
 
-    llm = Ollama(model="llama3.1")
+    # llm = Ollama(model="llama3.1")
+    # llm = ChatGroq(model="llama-3.2-90b-text-preview")
+    llm = ChatGroq(model="llama-3.1-70b-versatile")
     template = """soit concis. Si tu n'as pas de reponse dit le.
     Si tu as besoins que l'auteur reformule la question, aide le en proposant plusieur choix.
     Répond à la question uniquement en te basant sur le contexte suivant:
