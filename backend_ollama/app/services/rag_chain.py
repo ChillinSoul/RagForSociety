@@ -4,7 +4,6 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_groq import ChatGroq
 from langchain.load import dumps, loads
-from langchain_groq import ChatGroq
 from operator import itemgetter
 import logging
 

@@ -74,6 +74,7 @@ def initialize_multiple_choice_chain():
     llm = Ollama(model="llama3.1")
     #llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
     #llm = ChatGroq( model="llama-3.2-11b-text-preview")
+    
     # Define the chain without the output_parser
     mc_chain = LLMChain(
         llm=llm,
