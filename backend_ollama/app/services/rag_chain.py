@@ -20,8 +20,8 @@ def initialize_rag_chain(retriever):
     # llm = ChatGroq( model="llama-3.1-70b-versatile")
 
     template = """Tu est une IA qui a pour objectif d'aider des personnes à trouver s'il peuvent toucher des aides sociales.
-    Répond aux questions selon le contexte et donne des explications complètes.
-    Soit concis. Si tu n'as pas de reponse dit le.
+    Répond aux questions selon le contexte et donne des explications concises.
+    Si tu n'as pas de reponse dit le!
     Si tu as besoins que l'auteur reformule la question, aide le en proposant plusieur choix, mais ne répond pas que avec les liens donne des explications dans ta réponse.
     Si le contexte te procure un lien utile, écris le dans ta réponse au **format Markdown**.
     **Écris ta réponse dans le format Markdown**.
