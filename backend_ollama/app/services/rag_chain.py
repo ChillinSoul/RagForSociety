@@ -64,8 +64,9 @@ def initialize_rag_chain(retriever):
         | log_llm_message
         | llm 
         | StrOutputParser() 
-        | (lambda x: x.split("\n"))
+        | (lambda x: [query.strip() for query in x.split("\n") if query.strip()])
     )
+
 
     generate_query_back_and_forth = (
         back_and_forth_prompt 
@@ -90,6 +91,8 @@ def initialize_rag_chain(retriever):
         return reranked_results[:5]
 
     retrieval_chain = generate_queries | retriever.map() | reciprocal_rank_fusion
+
+    # retrieval_chain = retriever
 
     def format_docs(docs):
         formatted_docs = []

@@ -52,6 +52,7 @@ async def startup_event():
         
         logger.info("Creating retriever")
         retriever = vectorstore.as_retriever()
+        # search_kwargs={"k": 1}
         
         logger.info("Initializing RAG chain")
         retrieval_chain, final_chain, generate_query_back_and_forth = initialize_rag_chain(retriever)
