@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 interface SourcesProps {
   retrieverResults: Array<{
@@ -9,15 +10,6 @@ interface SourcesProps {
 }
 
 const SourcesComponent: React.FC<SourcesProps> = ({ retrieverResults }) => {
-  const formatLlmResponse = (response: string) => {
-    const formattedResponse = response.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    let resp = formattedResponse.split("\n").map((line, index) => (
-      <p key={index} dangerouslySetInnerHTML={{ __html: line }}></p>
-    ));
-
-    return resp;
-  };
-
   const formatRetrieverResults = (
     results: Array<{
       page_content: string;
@@ -43,14 +35,21 @@ const SourcesComponent: React.FC<SourcesProps> = ({ retrieverResults }) => {
           {/* Toggle Button for Collapse/Expand */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="ml-2 text-blue-500"
+            className="ml-2"
           >
             {isExpanded ? 'Cacher' : 'Montrer'} le resumé de la page
           </button>
 
-          {/* Conditionally Render the Content */}
-          {isExpanded ? <div>{formatLlmResponse(result.page_content)}</div>:
-            <div className='h-24 overflow-auto'>{formatLlmResponse(result.page_content)}</div>}
+          {/* Conditionally Render the Content using ReactMarkdown */}
+          {isExpanded ? (
+            <div>
+              <ReactMarkdown>{result.page_content}</ReactMarkdown>
+            </div>
+          ) : (
+            <div className="h-24 overflow-auto">
+              <ReactMarkdown>{result.page_content}</ReactMarkdown>
+            </div>
+          )}
         </div>
       );
     });
