@@ -86,7 +86,7 @@ def initialize_rag_chain(retriever):
 
         reranked_results = [
             (loads(doc), score)
-            for doc, score in sorted(fused_scores.items(), key=lambda x: x[1], reverse=False)
+            for doc, score in sorted(fused_scores.items(), key=lambda x: x[1], reverse=True)
         ]
         return reranked_results[:5]
 
