@@ -71,9 +71,11 @@ def initialize_multiple_choice_chain():
     mc_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
 
     # Initialize the LLM
-    llm = Ollama(model="llama3.1")
+    # llm = Ollama(model="llama3.1")
     #llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
     #llm = ChatGroq( model="llama-3.2-11b-text-preview")
+    #llm = ChatGroq( model="llama-3.2-90b-text-preview")
+    llm = ChatGroq( model="llama-3.1-70b-versatile")
     
     # Define the chain without the output_parser
     mc_chain = LLMChain(

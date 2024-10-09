@@ -11,9 +11,13 @@ logger = logging.getLogger(__name__)
 
 def initialize_rag_chain(retriever):
 
-    llm = Ollama(model="llama3.1")
+    # llm = Ollama(model="llama3.1")
 
-    #llm = ChatGroq( model="llama-3.2-11b-text-preview")
+    # llm = ChatGroq( model="llama-3.2-11b-text-preview")
+
+    llm = ChatGroq( model="llama-3.2-90b-text-preview")
+
+    # llm = ChatGroq( model="llama-3.1-70b-versatile")
 
     template = """soit concis. Si tu n'as pas de reponse dit le.
     Si tu as besoins que l'auteur reformule la question, aide le en proposant plusieur choix.

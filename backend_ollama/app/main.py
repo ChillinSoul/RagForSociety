@@ -42,7 +42,7 @@ app.add_middleware(
 async def startup_event():
     try:
         logger.info("Initializing application...")
-        file_path = os.environ.get("FILE_PATH", "output.json")
+        file_path = os.environ.get("FILE_PATH", "new_output.json")
         logger.info(f"Loading documents from {file_path}")
         docs = load_documents(file_path)
         logger.info(f"Loaded {len(docs)} documents")
