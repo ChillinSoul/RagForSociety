@@ -30,7 +30,12 @@ llm = ChatGroq(model="llama-3.2-90b-text-preview")
 # Create a prompt template for summarizing content
 prompt_template = PromptTemplate(
     input_variables=["content"],
-    template="Écris un résumé pour ce texte dans le contexte de fournir le plus d'informations possible sur un certain sujet à un utilisateur. Le résumé doit contenir toutes les informations du document mais d'une façon structurée et plus courte **Écris seulement le résumé, pas de texte en plus (par exemple: N'écris pas de \"Voici un résumé structuré du texte:\")**: {content}"
+    template="""Écris un résumé pour ce texte dans le contexte de fournir le plus d'informations possible sur un certain sujet à un utilisateur.
+      Le résumé doit contenir toutes les informations du document mais d'une façon structurée et plus courte **Écris seulement le résumé, pas de texte en plus (par exemple: N'écris pas de \"Voici un résumé structuré du texte:\")**
+      Il faut impérativement s'intégrer **TOUS** les liens vers les sites gouvernementaux et autre liens permettant d'aider l'utilisateur sous **format markdown**.
+      Ces lien doivent **IMPÉRATIVEMENT** être intégrés à l'intérieur du résumé, au niveau de la phrase qui leur correspond, et surtout **PAS TOUS Á LA FIN**.
+      Voici le texte à résumer:
+        {content}"""
 )
 
 # Initialize a RunnableSequence (replacing the LLMChain)
@@ -39,59 +44,80 @@ summarize_chain = prompt_template | llm | StrOutputParser()
 # Define the first message and the AI response
 def create_conversation_history():
     return [
-        HumanMessage(content="""Écris un résumé pour ce texte dans le contexte de fournir le plus d'informations possible sur un certain sujet à un utilisateur. Le résumé doit contenir toutes les informations du document mais d'une façon structurée et plus courte **Écris seulement le résumé, pas de texte en plus (par exemple: N'écris pas de "Voici un résumé structuré du texte:")**: [Accueil](https://aide-sociale.be "Accueil")\n»\n[Famille](https://aide-sociale.be/famille/ "Famille")\n»\n[Familles à faibles revenus](https://aide-sociale.be/famille/familles-faibles-revenus/ "Familles à faibles revenus")\n \n# L’aide alimentaire en Belgique : Un soutien essentiel pour les personnes en difficulté\n \nPar Salma L. Mise à jour le 1 octobre 2024Temps de lecture estimé : 7 minutes\nEn Belgique, **l’aide alimentaire représente une bouée de sauvetage** pour de nombreuses **personnes qui se trouvent en situation de précarité**. Ce soutien se manifeste sous diverses formes, allant des **colis alimentaires** aux **épiceries sociales** et aux **restaurants sociaux**. \nDans ce qui suit, nous vous présenterons **les différentes formes d’aide alimentaire** disponibles en Belgique, **comment elles fonctionnent**, **qui y a droit**, et **comment y accéder**."""),
-        AIMessage(content="""# Aide alimentaire en Belgique - Résumé structuré
+        HumanMessage(content="""Écris un résumé pour ce texte dans le contexte de fournir le plus d'informations possible sur un certain sujet à un utilisateur.
+                        Le résumé doit contenir toutes les informations du document mais d'une façon structurée et plus courte **Écris seulement le résumé, pas de texte en plus (par exemple: N'écris pas de "Voici un résumé structuré du texte:")**
+                        Il faut impérativement s'intégrer **TOUS** les liens vers les sites gouvernementaux et autre liens permettant d'aider l'utilisateur sous **format markdown**.
+                        Ces lien doivent **IMPÉRATIVEMENT** être intégrés à l'intérieur du résumé, au niveau de la phrase qui leur correspond, et surtout **PAS TOUS Á LA FIN**.
+                        Voici le texte à résumer:
+                         [Accueil](https://aide-sociale.be "Accueil")\n»\n[Famille](https://aide-sociale.be/famille/ "Famille")\n»\n[Familles à faibles revenus](https://aide-sociale.be/famille/familles-faibles-revenus/ "Familles à faibles revenus")\n \n# L’aide alimentaire en Belgique : Un soutien essentiel pour les personnes en difficulté\n \nPar Salma L. Mise à jour le 1 octobre 2024Temps de lecture estimé : 7 minutes\nEn Belgique, **l’aide alimentaire représente une bouée de sauvetage** pour de nombreuses **personnes qui se trouvent en situation de précarité**. Ce soutien se manifeste sous diverses formes, allant des **colis alimentaires** aux **épiceries sociales** et aux **restaurants sociaux**. \nDans ce qui suit, nous vous présenterons **les différentes formes d’aide alimentaire** disponibles en Belgique, **comment elles fonctionnent**, **qui y a droit**, et **comment y accéder**."""),
+        AIMessage(content="""**L'aide alimentaire en Belgique : Un soutien essentiel pour les personnes en difficulté**
 
-## Définition et objectif
-L'aide alimentaire est un soutien destiné aux personnes en situation de précarité ayant des difficultés à se nourrir pour des raisons économiques.
+L'aide alimentaire en Belgique est un dispositif essentiel proposant plusieurs formes de soutien aux personnes en difficulté financière. Pour une assistance immédiate : appelez le 1718 en Wallonie ou le 0800 35 243 à Bruxelles. Plus d'informations sur [aide-sociale.be](https://aide-sociale.be/).
 
-## Critères d'éligibilité
-- Seuil de pauvreté : 
-  - Personne isolée : < 1.287€/mois
-  - Ménage de 4 personnes : < 2.703€/mois
-- Profils typiques : familles monoparentales, travailleurs à faible revenu, sans-papiers, seniors sans revenus, étudiants en difficulté
+**Qui a droit à l'aide alimentaire ?**
 
-## Types d'aide alimentaire
-1. Colis alimentaires
-   - Contenu : produits non périssables, produits frais
-   - 460+ services de distribution en Wallonie
+L'accès est réservé aux personnes sous le seuil de pauvreté :
+- Personne isolée : revenu inférieur à 1.287 euros/mois
+- Ménage de quatre personnes : revenu inférieur à 2.703 euros/mois
 
-2. Épiceries sociales
-   - Prix réduits (environ -10% du prix du marché)
-   - ~100 épiceries en Wallonie
-   - ~15 épiceries à Bruxelles
+Bénéficiaires principaux :
+- [Familles monoparentales](https://aide-sociale.be/aides-familles-monoparentales/)
+- [Travailleurs à faible revenu](https://aide-sociale.be/famille/familles-faibles-revenus/)
+- [Personnes sans papiers](https://aide-sociale.be/aides-personnes-sans-papiers/) (avec accompagnement spécialisé)
+- Seniors sans revenus
+- Étudiants en difficulté
 
-3. Restaurants sociaux
-   - Repas chauds à bas prix
-   - ~60 restaurants en région bruxelloise
+**Types d'aide alimentaire disponibles**
 
-4. Frigos solidaires
-   - Partage de denrées proche péremption
-   - ~15 frigos à Bruxelles
+1. **Colis alimentaires** :
+   - Plus de 460 services de distribution en Wallonie
+   - Contiennent des produits non périssables et frais
+   - [Répertoire complet des services](https://www.fdss.be/fr/concertation-aide-alimentaire/repertoire-de-l-aide-alimentaire/)
 
-## Procédure d'accès
-### Documents requis
-- Fiches de paie
-- Attestations de revenus
-- Factures (énergie, télécommunications)
-- Contrat de bail/preuves de logement
-- Preuves de dettes
+2. **Épiceries sociales** :
+   - Réduction moyenne de 10% sur les prix du marché
+   - Environ 100 épiceries en Wallonie : [Liste complète](https://www.fdss.be/wp-content/uploads/R%C3%A9pertoire_aide_alimentaire_wallonie.pdf)
+   - 15 épiceries à Bruxelles : [Répertoire](https://social.brussels/category/454)
+   - Accompagnement personnalisé pour la gestion du budget
 
-### Points de contact
-- Wallonie : numéro vert 1718
-- Bruxelles : 0800 35 243
+3. **Restaurants sociaux** :
+   - 60 établissements en région bruxelloise : [Liste des restaurants](https://social.brussels/category/43)
+   - [Restos du Cœur](https://restosducoeur.be/fr/) : [Localisez le plus proche](https://restosducoeur.be/fr/nos-restos)
+   - Repas chauds à prix réduits avec accompagnement social
 
-## Organisations responsables
-1. Banques alimentaires (9 en Belgique)
-2. CPAS (Centres Publics d'Action Sociale)
-3. Associations caritatives (Croix-Rouge, Restos du Cœur)
-4. Initiatives citoyennes (Too Good To Go)
+4. **Frigos solidaires** :
+   - 15 frigos à Bruxelles
+   - Initiative anti-gaspillage via [Too Good To Go](https://www.toogoodtogo.com/fr-be)
 
-## Durée et conditions
-- Durée variable selon situation
-- Possibilité de combiner différentes formes d'aide
-- Participation financière parfois demandée
-- Accompagnement social disponible""")
+**Documents requis et procédure d'inscription**
+
+Documents nécessaires :
+ - Preuves de revenus : fiches de paie, [allocations de chômage](https://aide-sociale.be/chomage/), [allocations handicap](https://aide-sociale.be/reconnaissance-handicap/)
+ - Factures récentes : énergie, télécommunications
+ - Logement : bail, quittances, [crédit hypothécaire social](https://aide-sociale.be/credit-hypothecaire-social/)
+ - Situation spécifique : [allocation d'intégration](https://aide-sociale.be/allocation-integration/) (dispensée de preuves)
+
+**Organisations et contacts**
+
+1. **[Banques alimentaires](https://www.foodbanks.be/fr/index.html)** :
+   - 9 banques en Belgique
+   - Coordination de la collecte et distribution
+
+2. **[CPAS](https://www.belgium.be/fr/famille/aide_sociale/cpas)** :
+   - [CPAS Bruxelles](https://cpasbxl.brussels/)
+   - Aide alimentaire et accompagnement social
+
+3. **Associations caritatives** :
+   - [Croix-Rouge](https://www.croix-rouge.be/)
+   - [Restos du Cœur](https://restosducoeur.be/fr/)
+
+**Informations complémentaires**
+
+ - Durée de l'aide : adaptée à chaque situation
+ - Coût : gratuit ou participation symbolique selon les services
+ - Cumul possible des aides selon les besoins
+ - [Rente alimentaire](https://aide-sociale.be/rente-alimentaire/) disponible en cas de séparation
+ - Accompagnement social personnalisé disponible dans la plupart des services""")
     ]
 
 def process_and_summarize(data, output_file):
