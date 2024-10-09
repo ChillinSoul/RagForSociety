@@ -7,3 +7,8 @@
     text-wrap: balance;
   }
 }
+
+a {
+  color: rgb(138, 138, 247);
+  text-decoration: underline;
+}
