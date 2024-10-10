@@ -72,7 +72,6 @@ const Home = () => {
   const [query, setQuery] = useState<string>("");
   const [showResponse, setShowResponse] = useState<boolean>(false);
   const [showMcq, setShowMcq] = useState<boolean>(false);
-  const [showSources, setShowSources] = useState<boolean>(false);
   const [questionaireAnswered, setQuestionaireAnswered] = useState<boolean>(false);
 
 
@@ -121,8 +120,7 @@ const Home = () => {
         <ul className="flex flex-row h-[calc(100%-190px)]" ref={parent}>
         {(responseMutation.isSuccess || responseBNFMutation.isSuccess) && showResponse && (
         <>
-        {showSources && !showMcq ? (
-          <li className="h-full" key="sources">
+        <li className="h-full w-96" key="sources">
             <SourcesComponent
               retrieverResults={
                 responseBNFMutation.isSuccess
@@ -131,9 +129,10 @@ const Home = () => {
               }
             />
           </li>
-        ) : 
-         showMcq ? (
-                <li className="h-full" key="mcq">
+          
+       
+         {showMcq ? (
+                <li className="h-full w-[calc(100%-384px)]" key="mcq">
               <McqComponent
                 questions={
                   responseBNFMutation.isSuccess
@@ -144,7 +143,7 @@ const Home = () => {
               />
               </li>
             ) : (
-                <li className="h-full" key="response">
+                <li className="h-full w-[calc(100%-384px)]" key="response">
               <ResponseComponent
                 llmResponse={
                   responseBNFMutation.isSuccess
@@ -154,6 +153,8 @@ const Home = () => {
               />
                 </li>
             )}
+
+            
           
         </>
       )}
@@ -162,11 +163,6 @@ const Home = () => {
       {(responseMutation.isSuccess || responseBNFMutation.isSuccess) && showResponse &&!questionaireAnswered && (
             <button className="btn ml-8 " onClick={() => setShowMcq(!showMcq)}>
               {showMcq ? "Afficher la réponse" : "Améliorer la réponse avec des questions"}
-            </button>
-        )}
-        {(responseMutation.isSuccess || responseBNFMutation.isSuccess) && showResponse && !showMcq && (
-            <button className="btn ml-8 " onClick={() => setShowSources(!showSources)}>
-                {showSources ? "Cacher les sources" : "Afficher les sources"}
             </button>
         )}
 
