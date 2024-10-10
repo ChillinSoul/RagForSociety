@@ -21,10 +21,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" data-theme="retro">
-      <body className={`${robotoMono.variable} antialiased bg-base-100`}>
+    <html lang="fr" data-theme="cupkake">
+      <body className={`${robotoMono.variable} antialiased bg-neutral `}>
+        <div className = "flex flex-row h-screen w-screen">
         <Navbar />
-        {children}
+        <div className = "m-8 ml-64 w-full h-auto rounded-xl  bg-base-100">
+          {children}
+        </div>
+        </div>
       </body>
     </html>
   );

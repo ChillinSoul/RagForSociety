@@ -9,9 +9,8 @@ interface ResponseProps {
 
 const ResponseComponent: React.FC<ResponseProps> = ({ llmResponse }) => {
   return (
-    <div className="flex-1 h-full card">
-      <h2 className="text-xl font-semibold">Réponse du modèle:</h2>
-      <div className="card-body bg-neutral text-neutral-content p-4 mt-2 overflow-auto h-full">
+    <div className="flex-1 h-full ">
+      <div className=" p-4 m-8 bg-base-200 rounded-xl overflow-auto h-full">
         <ReactMarkdown
           className="whitespace-pre-wrap"
           remarkPlugins={[remarkGfm]} // Enables support for things like links and tables

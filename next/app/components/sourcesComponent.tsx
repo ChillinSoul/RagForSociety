@@ -56,9 +56,8 @@ const SourcesComponent: React.FC<SourcesProps> = ({ retrieverResults }) => {
   };
 
   return (
-    <div className="flex-1 h-full card">
-      <h2 className="text-xl font-semibold">Sources:</h2>
-      <div className="card-body bg-neutral text-neutral-content p-4 mt-2 overflow-auto h-full">
+    <div className="flex-1 h-full m-8 bg-base-200 rounded-xl">
+      <div className=" p-4 mt-2 overflow-auto h-full">
         {retrieverResults.length > 0 ? (
           <div>{formatRetrieverResults(retrieverResults)}</div>
         ) : (

@@ -1,6 +1,6 @@
 "use client";
 
-import QueryComponent from "./components/queryComponent";
+import HomeComponent from "./components/home";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
@@ -8,7 +8,7 @@ const queryClient = new QueryClient();
 export default function Home() {
   return (
     <QueryClientProvider client={queryClient}>
-      <QueryComponent />
+      <HomeComponent />
     </QueryClientProvider>
   );
 }

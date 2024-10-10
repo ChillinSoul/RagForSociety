@@ -35,7 +35,7 @@ const McqComponent = ({ questions, onSubmit }: McqProps) => {
 
   return (
     <form onSubmit={handleValidate}
-        className="flex flex-col gap-4 overflow-auto h-full"
+        className="flex flex-col gap-4 justify-center m-8 overflow-auto h-full"
     >
       {questions.map((question, questionIndex) => (
         <div key={questionIndex} className="mb-4">
