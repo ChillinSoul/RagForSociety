@@ -54,7 +54,12 @@ async def startup_event():
         retriever = vectorstore.as_retriever()
         
         logger.info("Initializing RAG chain")
-        retrieval_chain, final_chain, generate_query_back_and_forth = initialize_rag_chain(retriever)
+        retrieval_chain, final_chain, generate_query_back_and_forth = initialize_rag_chain(
+            retriever,
+            automatic_verifier=True,
+            use_verifier=False
+        )
+
         mc_chain = initialize_multiple_choice_chain()
         rag_chain.initialize_rag_chain_global(retrieval_chain, final_chain, mc_chain, generate_query_back_and_forth)
         logger.info("Application initialized successfully")
