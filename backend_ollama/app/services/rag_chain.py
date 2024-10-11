@@ -39,14 +39,14 @@ def initialize_rag_chain(
 
     verifier_template = """
     Étant donné la question et le document suivants, déterminez si le document est un peu ou beaucoup lié à la question.
-    Répondez "Oui" s'il est lié de près ou de loin, ou "Non" s'il ne l'est pas. Ceci est dans le contexte des aides sociales en Belgique.
-    Si tu n'es pas sûr, répond "Oui".
+    Répondez "Oui" s'il est lié de près ou de loin, ou <non> s'il ne l'est pas. Ceci est dans le contexte des aides sociales en Belgique.
+    Réfléchis avant de prendre la décision.
 
     Question : {question}
 
     Document : {document}
 
-    Le document est-il lié de près ou de loin par rapport à la question ? Répondez "Oui" ou "Non" et fournissez une brève explication. Si tu n'es pas sûr, répond "Oui".
+    Le document est-il lié de près ou de loin par rapport à la question ? Réfléchis en interne en plusieurs étapes concises, et ensuite répond par <oui> ou <non>. Si tu n'es pas sûr, répond <oui>.
     """
 
     verifier_prompt = ChatPromptTemplate.from_template(verifier_template)
@@ -54,11 +54,11 @@ def initialize_rag_chain(
     #--------------------------- Precision Checker Chain --------------------------
 
     precision_checker_template = """
-    Étant donné la question suivante, déterminez si elle est suffisamment précise pour utiliser le vérificateur de documents.
+    Étant donné la question suivante, déterminez si elle est suffisamment précise pour utiliser le vérificateur de documents en réfléchissant avant de prendre la décision.
 
     Question : {question}
 
-    La question est-elle suffisamment précise pour utiliser le vérificateur de documents ? Répondez "Oui" ou "Non" et fournissez une brève explication.
+    La question est-elle suffisamment précise pour utiliser le vérificateur de documents ?  Réfléchis en interne en plusieurs étapes concises, et ensuite répond par <oui> ou <non>. Si tu n'es pas sûr, répond <non>.
     """
 
     precision_checker_prompt = ChatPromptTemplate.from_template(precision_checker_template)
@@ -82,7 +82,7 @@ def initialize_rag_chain(
                 prompt_input = precision_checker_prompt.format(question=question)
                 response = self.llm_precision_checker.invoke(prompt_input)
                 logger.info(f"Precision Checker LLM response: {response.content}")
-                should_use_verifier = 'Oui' in response.content
+                should_use_verifier = '<oui>' in response.content or 'Oui' in response.content or 'oui' in response.content
             else:
                 should_use_verifier = False
 
@@ -94,7 +94,7 @@ def initialize_rag_chain(
                     prompt_input = verifier_prompt.format(question=question, document=formatted_doc)
                     response = self.llm_verifier.invoke(prompt_input)
                     logger.info(f"Verifier LLM response: {response.content}")
-                    if 'Oui' in response.content:
+                    if '<oui>' in response.content or 'Oui' in response.content or 'oui' in response.content:
                         filtered_results.append(doc)
                 retriever_results = filtered_results
                 logger.info(f"Filtered results: {len(retriever_results)} documents after verification")
@@ -118,8 +118,8 @@ def initialize_rag_chain(
 
     multi_query_template = """Vous êtes un assistant modèle de langage IA.
     Votre tâche est de générer cinq versions différentes de la question posée par l'utilisateur
-    afin de récupérer des documents pertinents à partir d'une base de données vectorielle.
-    En générant plusieurs perspectives de la question de l'utilisateur,
+    afin de récupérer des documents pertinents à partir d'une base de données vectorielle dans le domaine des **aides sociales en Belgique**.
+    En générant plusieurs perspectives de la question de l'utilisateur avec un peu plus de recul,
     votre objectif est d'aider l'utilisateur à surmonter certaines des limites de la recherche de similarité basée sur la distance.
     Fournissez ces questions alternatives, séparées par des sauts de ligne. Ne rends que les questions sans texte supplémentaire.
     Question originale : {question}"""

@@ -1,10 +1,12 @@
+import io
 import os
+import uuid
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import scraped_data, rag_chain
+from app.routers import scraped_data, rag_chain, speech
 from app.services.data_loader import load_documents
 from app.services.vectorstore import initialize_vectorstore
 from app.services.rag_chain import initialize_rag_chain
@@ -13,12 +15,19 @@ import logging
 import getpass
 import os
 
+
+from fastapi import FastAPI, File, UploadFile, Form
+from fastapi.responses import StreamingResponse
+from app.services.speech_to_text import transcribe_audio
+from app.services.text_to_speech import synthesize_speech
+
 load_dotenv(".env")
 
 os.environ['LANGCHAIN_TRACING_V2'] = 'true'
 os.environ['LANGCHAIN_ENDPOINT'] = 'https://api.smith.langchain.com'
 # Retrieve the API key from the .env file
 os.environ['LANGCHAIN_API_KEY'] = os.getenv('LANGCHAIN_API_KEY')
+os.environ['ELEVEN_API_KEY'] = os.getenv('ELEVEN_API_KEY')
 
 if "GROQ_API_KEY" not in os.environ:
     os.environ["GROQ_API_KEY"] = getpass.getpass("Enter your Groq API key: ")
@@ -69,6 +78,7 @@ async def startup_event():
 
 app.include_router(scraped_data.router)
 app.include_router(rag_chain.router)
+app.include_router(speech.router)
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -85,6 +95,8 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "An unexpected error occurred."}
     )
+
+
 
 if __name__ == "__main__":
     import uvicorn
