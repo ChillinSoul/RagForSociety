@@ -20,15 +20,3 @@ async def transcribe(file: UploadFile = File(...)):
     finally:
         os.remove(temp_filename)
     return {"transcription": transcription}
-
-@router.post("/tts/")
-async def tts(request: Request):
-    data = await request.json()
-    text = data.get("text")
-    if not text:
-        raise HTTPException(status_code=400, detail="Text is required")
-    try:
-        audio_content = synthesize_speech(text)
-        return StreamingResponse(io.BytesIO(audio_content), media_type="audio/mpeg")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
