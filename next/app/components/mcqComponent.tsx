@@ -57,7 +57,7 @@ const McqComponent = ({ questions, onSubmit }: McqProps) => {
           </div>
         </div>
       ))}
-      <button type="submit" className="btn btn-success mt-4">
+      <button type="submit" className="btn btn-neutral mt-4">
         {buttonText}
       </button>
     </form>
