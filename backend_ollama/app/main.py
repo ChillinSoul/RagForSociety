@@ -16,10 +16,6 @@ import getpass
 import os
 
 
-from fastapi import FastAPI, File, UploadFile, Form
-from fastapi.responses import StreamingResponse
-from app.services.speech_to_text import transcribe_audio
-from app.services.text_to_speech import synthesize_speech
 
 load_dotenv(".env")
 
