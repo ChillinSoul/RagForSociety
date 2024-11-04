@@ -22,6 +22,7 @@ const ResponseComponent: React.FC<ResponseProps> = ({ llmResponse }) => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 underline"
+                tabIndex={0}
               >
                 {children}
               </a>

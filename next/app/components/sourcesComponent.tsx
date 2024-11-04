@@ -28,12 +28,13 @@ const SourcesComponent: React.FC<SourcesProps> = ({ retrieverResults }) => {
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 underline"
+            tabIndex={0}
           >
             {result.metadata.url}
           </a>
 
           {/* Toggle Button for Collapse/Expand */}
-          <button onClick={() => setIsExpanded(!isExpanded)} className="ml-2">
+          <button onClick={() => setIsExpanded(!isExpanded)} className="ml-2 btn btn-neutral">
             {isExpanded ? "Cacher" : "Montrer"} le resumé de la page
           </button>
 

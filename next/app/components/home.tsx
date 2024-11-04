@@ -169,7 +169,7 @@ const Home = () => {
         {(responseMutation.isSuccess || responseBNFMutation.isSuccess) &&
           showResponse &&
           !questionaireAnswered && (
-            <button className="btn ml-8 " onClick={() => setShowMcq(!showMcq)}>
+            <button className="btn ml-8 " onClick={() => setShowMcq(!showMcq)} tabIndex={0}>
               {showMcq
                 ? "Afficher la réponse"
                 : "Améliorer la réponse avec des questions"}

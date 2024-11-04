@@ -100,14 +100,16 @@ const QueryBar = ({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Comment puis-je vous aider?"
           required
-          className="input input-bordered w-full"
+          className="input input-bordered input-secondary w-full"
         />
       </div>
 
       <button
         type="button"
+        aria-label="Activer/Désactiver le microphone"
         className={`btn ${isRecording ? "btn-error" : "btn-secondary"} mt-4`}
         onClick={handleMicClick}
+        tabIndex={0}
         disabled={responseMutation.isPending || responseBNFMutation.isPending}
       >
         {isRecording ? <MicOff className="animate-pulse" /> : <Mic />}
@@ -115,7 +117,9 @@ const QueryBar = ({
 
       <button
         type="submit"
+        aria-label="Envoyer la requête"
         className="btn btn-secondary mt-4"
+        tabIndex={0}
         disabled={responseMutation.isPending || responseBNFMutation.isPending}
       >
         <Send />
