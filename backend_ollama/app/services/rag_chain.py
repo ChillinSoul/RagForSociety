@@ -21,7 +21,7 @@ def initialize_rag_chain(
 
     # Set default LLMs if not provided
     if llm_generate_queries is None:
-        llm_generate_queries = ChatGroq(model="llama-3.2-90b-text-preview")
+        llm_generate_queries = ChatGroq(model="llama-3.2-90b-text-preview", temperature=0.9)
 
     if llm_verifier is None:
         llm_verifier = ChatGroq(model="llama-3.2-90b-text-preview")
@@ -119,7 +119,7 @@ def initialize_rag_chain(
     multi_query_template = """Vous êtes un assistant modèle de langage IA.
     Votre tâche est de générer cinq versions différentes de la question posée par l'utilisateur
     afin de récupérer des documents pertinents à partir d'une base de données vectorielle dans le domaine des **aides sociales en Belgique**.
-    En générant plusieurs perspectives de la question de l'utilisateur avec un peu plus de recul,
+    En générant plusieurs perspectives de la question de l'utilisateur avec plus de recul,
     votre objectif est d'aider l'utilisateur à surmonter certaines des limites de la recherche de similarité basée sur la distance.
     Fournissez ces questions alternatives, séparées par des sauts de ligne. Ne rends que les questions sans texte supplémentaire.
     Question originale : {question}"""
