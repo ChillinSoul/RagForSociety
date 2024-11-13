@@ -26,7 +26,6 @@ os.environ['LANGCHAIN_TRACING_V2'] = 'true'
 os.environ['LANGCHAIN_ENDPOINT'] = 'https://api.smith.langchain.com'
 # Retrieve the API key from the .env file
 os.environ['LANGCHAIN_API_KEY'] = os.getenv('LANGCHAIN_API_KEY')
-os.environ['ELEVEN_API_KEY'] = os.getenv('ELEVEN_API_KEY')
 
 if "GROQ_API_KEY" not in os.environ:
     os.environ["GROQ_API_KEY"] = getpass.getpass("Enter your Groq API key: ")
@@ -67,7 +66,7 @@ async def startup_event():
         logger.info("Initializing RAG chain")
         retrieval_chain, final_chain, generate_query_back_and_forth = initialize_rag_chain(
             retriever,
-            automatic_verifier=True,
+            automatic_verifier=False,
             use_verifier=False
         )
 

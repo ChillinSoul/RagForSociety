@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import React, { useState } from "react";
+import ReactMarkdown from "react-markdown";
 
 interface SourcesProps {
   retrieverResults: Array<{
@@ -15,7 +15,7 @@ const SourcesComponent: React.FC<SourcesProps> = ({ retrieverResults }) => {
       page_content: string;
       metadata: { url: string };
       score: number;
-    }>
+    }>,
   ) => {
     return results.map((result, index) => {
       const [isExpanded, setIsExpanded] = useState(false);
@@ -28,16 +28,14 @@ const SourcesComponent: React.FC<SourcesProps> = ({ retrieverResults }) => {
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 underline"
+            tabIndex={0}
           >
             {result.metadata.url}
           </a>
 
           {/* Toggle Button for Collapse/Expand */}
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="ml-2"
-          >
-            {isExpanded ? 'Cacher' : 'Montrer'} le resumé de la page
+          <button onClick={() => setIsExpanded(!isExpanded)} className="ml-2 btn btn-neutral">
+            {isExpanded ? "Cacher" : "Montrer"} le resumé de la page
           </button>
 
           {/* Conditionally Render the Content using ReactMarkdown */}

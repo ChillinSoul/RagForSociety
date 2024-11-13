@@ -1,7 +1,6 @@
 # app/routers/speech.py
 import io
-from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, File, UploadFile
 from app.services.speech_to_text import transcribe_audio
 import os
 import uuid
