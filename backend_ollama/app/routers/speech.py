@@ -3,7 +3,6 @@ import io
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from app.services.speech_to_text import transcribe_audio
-from app.services.text_to_speech import synthesize_speech
 import os
 import uuid
 

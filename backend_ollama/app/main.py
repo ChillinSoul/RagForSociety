@@ -19,7 +19,6 @@ import os
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import StreamingResponse
 from app.services.speech_to_text import transcribe_audio
-from app.services.text_to_speech import synthesize_speech
 
 load_dotenv(".env")
 
@@ -47,21 +46,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+file_paths = os.getenv("FILE_PATHS", "data/aides-sociales.json,data/gemeente.json,data/securite-sociale.json").split(',')
+
 @app.on_event("startup")
 async def startup_event():
     try:
         logger.info("Initializing application...")
-        file_path = os.environ.get("FILE_PATH", "new_output.json")
-        logger.info(f"Loading documents from {file_path}")
-        docs = load_documents(file_path)
+
+        # New: Load documents from multiple files
+        logger.info(f"Loading documents from files: {file_paths}")
+        docs = load_documents(file_paths)
         logger.info(f"Loaded {len(docs)} documents")
-        
+
         logger.info("Initializing vectorstore")
         vectorstore = initialize_vectorstore(docs)
-        
+
         logger.info("Creating retriever")
         retriever = vectorstore.as_retriever()
-        
+
         logger.info("Initializing RAG chain")
         retrieval_chain, final_chain, generate_query_back_and_forth = initialize_rag_chain(
             retriever,
