@@ -90,9 +90,10 @@ const QueryBar = ({
   };
 
   return (
+    <div className="absolute bottom-0 flex w-full">
     <form
       onSubmit={handleSubmit}
-      className="absolute bottom-0 z-40 flex flex-row w-full gap-4 p-8"
+      className="absolute bottom-0 z-40 flex flex-row w-full gap-4 p-4"
     >
       <div className="form-control grow">
         <label htmlFor="query" className="label"></label>
@@ -127,8 +128,12 @@ const QueryBar = ({
       >
         <Send />
       </button>
-      <Score queryId={queryId} />
+      
     </form>
+    <div className="absolute bottom-20 right-0 z-40 p-4">
+    <Score queryId={queryId} />
+    </div>
+    </div>
   );
 };
 
