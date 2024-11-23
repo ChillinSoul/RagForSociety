@@ -24,6 +24,8 @@ interface ApiResponse {
       options: string[];
     }>;
   };
+
+  query_id: string;
 }
 
 interface qnr {
@@ -188,6 +190,11 @@ const Home = () => {
         handleSubmit={handleSubmit}
         responseMutation={responseMutation}
         responseBNFMutation={responseBNFMutation}
+        queryId={
+          responseBNFMutation.isSuccess
+            ? responseBNFMutation.data?.query_id || ""
+            : responseMutation.data?.query_id || ""
+        }
       />
     </div>
   );
