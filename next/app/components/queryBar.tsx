@@ -1,13 +1,14 @@
 // app/components/queryBar.tsx
 import React, { useState, useRef } from "react";
 import { Send, Mic, MicOff } from "lucide-react";
-
+import Score from "./score";
 interface QueryBarProps {
   query: string;
   setQuery: (query: string) => void;
   handleSubmit: (e: React.FormEvent) => void;
   responseMutation: any;
   responseBNFMutation: any;
+  queryId: string;
 }
 
 const QueryBar = ({
@@ -16,6 +17,7 @@ const QueryBar = ({
   handleSubmit,
   responseMutation,
   responseBNFMutation,
+  queryId,
 }: QueryBarProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -87,44 +89,47 @@ const QueryBar = ({
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="absolute bottom-0 z-40 flex flex-row w-full gap-4 p-8"
-    >
-      <div className="form-control grow">
-        <label htmlFor="query" className="label"></label>
-        <input
-          type="text"
-          id="query"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Comment puis-je vous aider?"
-          required
-          className="input input-bordered input-secondary w-full"
-        />
-      </div>
-
-      <button
-        type="button"
-        aria-label="Activer/Désactiver le microphone"
-        className={`btn ${isRecording ? "btn-error" : "btn-secondary"} mt-4`}
-        onClick={handleMicClick}
-        tabIndex={0}
-        disabled={responseMutation.isPending || responseBNFMutation.isPending}
+    <>
+      <form
+        onSubmit={handleSubmit}
+        className="absolute bottom-0 z-40 flex flex-row w-full gap-4 p-8"
       >
-        {isRecording ? <MicOff className="animate-pulse" /> : <Mic />}
-      </button>
+        <div className="form-control grow">
+          <label htmlFor="query" className="label"></label>
+          <input
+            type="text"
+            id="query"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Comment puis-je vous aider?"
+            required
+            className="input input-bordered input-secondary w-full"
+          />
+        </div>
 
-      <button
-        type="submit"
-        aria-label="Envoyer la requête"
-        className="btn btn-secondary mt-4"
-        tabIndex={0}
-        disabled={responseMutation.isPending || responseBNFMutation.isPending}
-      >
-        <Send />
-      </button>
-    </form>
+        <button
+          type="button"
+          aria-label="Activer/Désactiver le microphone"
+          className={`btn ${isRecording ? "btn-error" : "btn-secondary"} mt-4`}
+          onClick={handleMicClick}
+          tabIndex={0}
+          disabled={responseMutation.isPending || responseBNFMutation.isPending}
+        >
+          {isRecording ? <MicOff className="animate-pulse" /> : <Mic />}
+        </button>
+
+        <button
+          type="submit"
+          aria-label="Envoyer la requête"
+          className="btn btn-secondary mt-4"
+          tabIndex={0}
+          disabled={responseMutation.isPending || responseBNFMutation.isPending}
+        >
+          <Send />
+        </button>
+        <Score queryId={queryId} />
+      </form>
+    </>
   );
 };
 
