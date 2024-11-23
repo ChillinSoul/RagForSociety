@@ -1,3 +1,4 @@
+# app/main.py
 import io
 import os
 import uuid
@@ -5,37 +6,43 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+import logging
+import getpass
 
-from app.routers import scraped_data, rag_chain, speech
+from app.routers import scraped_data, rag_chain, speech, experiments
 from app.services.data_loader import load_documents
 from app.services.vectorstore import initialize_vectorstore
 from app.services.rag_chain import initialize_rag_chain
 from app.services.multiple_choice_chain import initialize_multiple_choice_chain
-import logging
-import getpass
-import os
+from app.services.config_service import ConfigService
 
-
-from fastapi import FastAPI, File, UploadFile, Form
-from fastapi.responses import StreamingResponse
-from app.services.speech_to_text import transcribe_audio
-
-load_dotenv(".env")
-
-os.environ['LANGCHAIN_TRACING_V2'] = 'true'
-os.environ['LANGCHAIN_ENDPOINT'] = 'https://api.smith.langchain.com'
-# Retrieve the API key from the .env file
-os.environ['LANGCHAIN_API_KEY'] = os.getenv('LANGCHAIN_API_KEY')
-
-if "GROQ_API_KEY" not in os.environ:
-    os.environ["GROQ_API_KEY"] = getpass.getpass("Enter your Groq API key: ")
+# Load environment variables
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+# Environment setup with defaults
+LANGCHAIN_API_KEY = os.getenv('LANGCHAIN_API_KEY')
+if LANGCHAIN_API_KEY:
+    os.environ['LANGCHAIN_TRACING_V2'] = 'true'
+    os.environ['LANGCHAIN_ENDPOINT'] = 'https://api.smith.langchain.com'
+    os.environ['LANGCHAIN_API_KEY'] = LANGCHAIN_API_KEY
+    logger.info("LangChain tracing enabled")
+else:
+    logger.warning("LANGCHAIN_API_KEY not found. Tracing will be disabled.")
 
+# Check for GROQ API key
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    GROQ_API_KEY = getpass.getpass("Enter your Groq API key: ")
+    os.environ["GROQ_API_KEY"] = GROQ_API_KEY
+
+# Database configuration
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./social_assistance.db")
+
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,42 +52,75 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-file_paths = os.getenv("FILE_PATHS", "data/aides-sociales.json,data/gemeente.json,data/securite-sociale.json").split(',')
+file_paths = os.getenv(
+    "FILE_PATHS", 
+    "data/aides-sociales.json,data/gemeente.json,data/securite-sociale.json"
+).split(',')
 
 @app.on_event("startup")
 async def startup_event():
     try:
         logger.info("Initializing application...")
-
-        # New: Load documents from multiple files
+        
+        # Initialize configuration service
+        config_service = ConfigService(DATABASE_URL)
+        config_service.initialize_default_configs()
+        
+        # Get the experiment group from environment variable or use default
+        experiment_group = os.getenv("EXPERIMENT_GROUP", "baseline")
+        logger.info(f"Using experiment group: {experiment_group}")
+        
+        # Load documents
         logger.info(f"Loading documents from files: {file_paths}")
         docs = load_documents(file_paths)
         logger.info(f"Loaded {len(docs)} documents")
 
+        # Initialize vectorstore
         logger.info("Initializing vectorstore")
         vectorstore = initialize_vectorstore(docs)
-
-        logger.info("Creating retriever")
         retriever = vectorstore.as_retriever()
 
+        # Initialize chains with experiment group
         logger.info("Initializing RAG chain")
         retrieval_chain, final_chain, generate_query_back_and_forth = initialize_rag_chain(
-            retriever,
-            automatic_verifier=False,
+            retriever=retriever,
+            config_service=config_service,
+            experiment_group=experiment_group,
+            automatic_verifier=True,
             use_verifier=False
         )
 
-        mc_chain = initialize_multiple_choice_chain()
-        rag_chain.initialize_rag_chain_global(retrieval_chain, final_chain, mc_chain, generate_query_back_and_forth)
+        mc_chain = initialize_multiple_choice_chain(
+            config_service=config_service,
+            experiment_group=experiment_group
+        )
+
+        # Initialize global chain state
+        rag_chain.initialize_rag_chain_global(
+            retrieval_chain, 
+            final_chain, 
+            mc_chain, 
+            generate_query_back_and_forth,
+            config_service
+        )
+
+        # Initialize the experiment router with config_service
+        experiments.router.dependency_overrides = {
+            lambda: None: lambda: config_service
+        }
+        
         logger.info("Application initialized successfully")
     except Exception as e:
         logger.error(f"Error during initialization: {str(e)}")
         raise
 
-app.include_router(scraped_data.router)
+# Include routers
+# app.include_router(scraped_data.router)
 app.include_router(rag_chain.router)
 app.include_router(speech.router)
+app.include_router(experiments.router, prefix="/experiments", tags=["experiments"])
 
+# Exception handlers
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     logger.error(f"HTTPException: {exc.detail}")
@@ -96,8 +136,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "An unexpected error occurred."}
     )
-
-
 
 if __name__ == "__main__":
     import uvicorn

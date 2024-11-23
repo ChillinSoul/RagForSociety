@@ -1,5 +1,6 @@
 {
     "python.analysis.extraPaths": [
-        "./backend_ollama/app/services"
+        "./backend_ollama/app/services",
+        "./backend_ollama"
     ]
 }
