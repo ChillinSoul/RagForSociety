@@ -3,7 +3,7 @@ import io
 import os
 import uuid
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import APIRouter, FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import logging
@@ -44,6 +44,11 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./social_assistance.db")
 
 app = FastAPI()
 
+# Create ConfigService instance at module level
+config_service = ConfigService(DATABASE_URL)
+
+api_router = APIRouter(prefix="/api")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://127.0.0.1:3000", "http://localhost:3000"],
@@ -62,8 +67,7 @@ async def startup_event():
     try:
         logger.info("Initializing application...")
         
-        # Initialize configuration service
-        config_service = ConfigService(DATABASE_URL)
+        # Initialize default configurations
         config_service.initialize_default_configs()
         
         # Get the experiment group from environment variable or use default
@@ -103,22 +107,30 @@ async def startup_event():
             generate_query_back_and_forth,
             config_service
         )
-
-        # Initialize the experiment router with config_service
-        experiments.router.dependency_overrides = {
-            lambda: None: lambda: config_service
-        }
         
         logger.info("Application initialized successfully")
     except Exception as e:
         logger.error(f"Error during initialization: {str(e)}")
         raise
 
-# Include routers
-# app.include_router(scraped_data.router)
-app.include_router(rag_chain.router)
-app.include_router(speech.router)
-app.include_router(experiments.router, prefix="/experiments", tags=["experiments"])
+# Include all routers under /api
+# api_router.include_router(scraped_data.router)
+api_router.include_router(rag_chain.router)
+api_router.include_router(speech.router)
+api_router.include_router(
+    experiments.router,
+    prefix="/experiments",
+    tags=["experiments"]
+)
+
+# Initialize the config service for experiments router
+async def get_config_service():
+    return config_service
+
+experiments.initialize_router(config_service)
+
+# Include the api_router
+app.include_router(api_router)
 
 # Exception handlers
 @app.exception_handler(HTTPException)

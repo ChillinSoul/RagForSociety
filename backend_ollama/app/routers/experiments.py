@@ -8,17 +8,23 @@ import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+_config_service = None
+
+def initialize_router(config_service):
+    global _config_service
+    _config_service = config_service
+    logger.info("Experiments router initialized with config service")
 
 class ScoreRequest(BaseModel):
     queryId: str
     score: int
 
 @router.post("/score", response_model=dict)
-async def score_result(score_data: ScoreRequest, config_service=None):
+async def score_result(score_data: ScoreRequest):
     """Simple endpoint to record experiment scores"""
     logger.info(f"Received score request: {score_data}")
     
-    if not config_service:
+    if not _config_service:
         logger.error("Configuration service not initialized")
         raise HTTPException(status_code=500, detail="Configuration service not initialized")
     
@@ -30,7 +36,7 @@ async def score_result(score_data: ScoreRequest, config_service=None):
         logger.info(f"Processing score for experiment group: {experiment_group}, model: {model_config_id}")
         
         # Save the score
-        config_service.save_experiment_result(
+        _config_service.save_experiment_result(
             question="",  # We don't need to store the question for simple scoring
             answer="",   # We don't need to store the answer for simple scoring
             model_config_id=model_config_id,
@@ -52,8 +58,8 @@ async def score_result(score_data: ScoreRequest, config_service=None):
         raise HTTPException(status_code=500, detail=f"Error saving score: {str(e)}")
 
 @router.get("/groups", response_model=list[str])
-async def get_experiment_groups(config_service=None):
+async def get_experiment_groups():
     """Get available experiment groups"""
-    if not config_service:
+    if not _config_service:
         raise HTTPException(status_code=500, detail="Configuration service not initialized")
-    return config_service.get_experiment_groups()
+    return _config_service.get_experiment_groups()
