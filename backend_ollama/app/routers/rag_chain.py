@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from app.models import QuestionRequest, QuestionBackAndForthRequest
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,26 @@ async def get_response(request: QuestionRequest):
         question = request.question.strip()
         logger.info(f"Received question: {repr(question)}")
 
+        # Get experiment group from config
+        experiment_group = os.getenv("EXPERIMENT_GROUP", "baseline")
+        logger.info(f"Using experiment group: {experiment_group}")
+        
+        # Get model configuration for response generation
+        model_config = config_service.get_model_config("final_answer", experiment_group)
+        if not model_config:
+            logger.error("Model configuration not found")
+            raise HTTPException(status_code=500, detail="Model configuration not found")
+            
+        # Get model_config_id for the experiment
+        model_config_id = config_service.get_model_config_id("final_answer", experiment_group)
+        if not model_config_id:
+            logger.error("Model config ID not found")
+            raise HTTPException(status_code=500, detail="Model config ID not found")
+
+        # Create a query ID that includes experiment information
+        query_id = f"{experiment_group}:{model_config_id}"
+        logger.info(f"Created query_id: {query_id}")
+
         retrieval_output = retrieval_chain.invoke(question)
         retrieval_results = retrieval_output['retriever_results']
         serialized_results = [serialize_document(doc) for doc in retrieval_results]
@@ -82,11 +103,63 @@ async def get_response(request: QuestionRequest):
         combined_response = {
             "retriever_results": serialized_results,
             "llm_response": llm_response,
-            "mc_response": mc_response
+            "mc_response": mc_response,
+            "query_id": query_id
         }
         
-        logger.info(f"Sent combined response")
+        logger.info(f"Sent combined response with query_id: {query_id}")
         return JSONResponse(content=combined_response)
+    except Exception as e:
+        logger.error(f"Error processing request: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+@router.post("/get-response-bnf/")
+async def get_response_back_and_forth(request: QuestionBackAndForthRequest):
+    global generate_query_back_and_forth, retrieval_chain, final_chain
+    try:
+        if not all([generate_query_back_and_forth, retrieval_chain, final_chain]):
+            logger.error("Back-and-forth chain not initialized")
+            raise HTTPException(status_code=500, detail="Back-and-forth chain not initialized")
+        
+        question = request.question.strip()
+        questionaire_data = request.questionaire or []
+        questionaire = " ".join(f"{item['question']} {item['reponse']} ." for item in questionaire_data)
+
+        # Get experiment group and create query_id
+        experiment_group = os.getenv("EXPERIMENT_GROUP", "baseline")
+        model_config_id = config_service.get_model_config_id("final_answer", experiment_group)
+        query_id = f"{experiment_group}:{model_config_id}"
+
+        retrieval_output = retrieval_chain.invoke(question)
+        context_docs = retrieval_output['retriever_results']
+        context_string = format_docs(context_docs)
+        
+        enhanced_query = generate_query_back_and_forth.invoke({
+            "question": question,
+            "questionaire": questionaire,
+            "context": context_string
+        })
+        
+        logger.info(f"Enhanced query: {enhanced_query}")
+        
+        retrieval_output = retrieval_chain.invoke(enhanced_query)
+        retrieval_results = retrieval_output['retriever_results']
+        serialized_results = [serialize_document(doc) for doc in retrieval_results]
+        
+        llm_response = final_chain.invoke({
+            "question": enhanced_query,
+            "retriever_results": retrieval_results
+        })
+
+        combined_response = {
+            "retriever_results": serialized_results,
+            "llm_response": llm_response,
+            "mc_response": [],
+            "query_id": query_id
+        }
+
+        return JSONResponse(content=combined_response)
+
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")

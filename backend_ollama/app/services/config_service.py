@@ -1,5 +1,5 @@
 # app/services/config_service.py
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from app.models.database import Base, PromptTemplate, ModelConfig, ExperimentResult
 from typing import Optional, Dict, List
@@ -14,6 +14,7 @@ class ConfigService:
         self.Session = sessionmaker(bind=self.engine)
         
     def get_prompt_template(self, component_type: str) -> Optional[str]:
+        """Get the active prompt template for a component"""
         session = self.Session()
         try:
             template = session.query(PromptTemplate)\
@@ -24,28 +25,47 @@ class ConfigService:
         finally:
             session.close()
             
-    def get_model_config(self, component_type: str, experiment_group: Optional[str] = None) -> Optional[Dict]:
+    def get_model_config(self, component_type: str, experiment_group: str = "baseline") -> Optional[Dict]:
+        """Get the active model configuration for a component and experiment group"""
+        logger.info(f"Getting model config for {component_type} in group {experiment_group}")
         session = self.Session()
         try:
-            query = session.query(ModelConfig)\
-                .filter_by(component_type=component_type, is_active=True)
+            config = session.query(ModelConfig)\
+                .filter_by(
+                    component_type=component_type,
+                    experiment_group=experiment_group,
+                    is_active=True
+                ).first()
             
-            if experiment_group:
-                query = query.filter_by(experiment_group=experiment_group)
-                
-            config = query.first()
             if config:
                 return {
+                    "id": config.id,
                     "provider": config.model_provider,
                     "name": config.model_name,
                     "parameters": config.parameters or {},
                     "system_prompt": config.system_prompt
                 }
+            logger.warning(f"No config found for {component_type} in group {experiment_group}")
             return None
         finally:
             session.close()
 
+    def get_model_config_id(self, component_type: str, experiment_group: str) -> Optional[int]:
+        """Get the model configuration ID for a specific component and experiment group"""
+        session = self.Session()
+        try:
+            config = session.query(ModelConfig.id)\
+                .filter_by(
+                    component_type=component_type,
+                    experiment_group=experiment_group,
+                    is_active=True
+                ).first()
+            return config[0] if config else None
+        finally:
+            session.close()
+
     def get_experiment_groups(self) -> List[str]:
+        """Get all available experiment groups"""
         session = self.Session()
         try:
             groups = session.query(ModelConfig.experiment_group)\
@@ -56,7 +76,15 @@ class ConfigService:
         finally:
             session.close()
 
-    def save_experiment_result(self, question: str, answer: str, model_config_id: int, score: float, feedback: Optional[str] = None):
+    def save_experiment_result(
+        self,
+        question: str,
+        answer: str,
+        model_config_id: int,
+        score: float,
+        feedback: Optional[str] = None
+    ):
+        """Save experiment result"""
         session = self.Session()
         try:
             result = ExperimentResult(
@@ -68,10 +96,16 @@ class ConfigService:
             )
             session.add(result)
             session.commit()
+            logger.info(f"Saved experiment result with score {score} for model {model_config_id}")
+        except Exception as e:
+            logger.error(f"Error saving experiment result: {e}")
+            session.rollback()
+            raise
         finally:
             session.close()
             
     def initialize_default_configs(self):
+        """Initialize default configurations if none exist"""
         session = self.Session()
         try:
             # Default prompt templates
@@ -121,7 +155,7 @@ Question : {question}""",
                 {
                     "name": "Multiple Choice Template",
                     "component_type": "multiple_choice",
-                    "template_content": """Tu es un assistant qui génère des questions à choix multiples sous forme de JSON pour obtenir des informations précises et personnelles sur l'utilisateur.
+                    "template_content": """Tu es un assistant qui génère des questions à choix multiples.
 Les questions doivent porter sur les **caractéristiques personnelles, habitudes, préférences, besoins** ou **situations spécifiques** de l'utilisateur, et être basées sur le contexte fourni.
 Chaque question doit être directement liée à l'utilisateur, concise, et proposer 3 à 4 options de réponse pertinentes. **La dernière option doit toujours être "N/A"**.
 

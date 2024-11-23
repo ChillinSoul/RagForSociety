@@ -1,43 +1,59 @@
 # app/routers/experiments.py
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-class ExperimentScore(BaseModel):
-    question: str
-    answer: str
-    model_config_id: int
-    score: float
-    feedback: Optional[str] = None
+class ScoreRequest(BaseModel):
+    queryId: str
+    score: int
 
-class ExperimentGroup(BaseModel):
-    name: str
-
-@router.get("/experiment-groups", response_model=List[str])
-async def get_experiment_groups(config_service=None):
+@router.post("/score", response_model=dict)
+async def score_result(score_data: ScoreRequest, config_service=None):
+    """Simple endpoint to record experiment scores"""
+    logger.info(f"Received score request: {score_data}")
+    
     if not config_service:
-        raise HTTPException(status_code=500, detail="Configuration service not initialized")
-    return config_service.get_experiment_groups()
-
-@router.post("/score")
-async def score_result(score_data: ExperimentScore, config_service=None):
-    if not config_service:
+        logger.error("Configuration service not initialized")
         raise HTTPException(status_code=500, detail="Configuration service not initialized")
     
     try:
+        # Extract experiment_group and model_config_id from queryId
+        experiment_group, model_config_id = score_data.queryId.split(':', 1)
+        model_config_id = int(model_config_id)
+        
+        logger.info(f"Processing score for experiment group: {experiment_group}, model: {model_config_id}")
+        
+        # Save the score
         config_service.save_experiment_result(
-            question=score_data.question,
-            answer=score_data.answer,
-            model_config_id=score_data.model_config_id,
-            score=score_data.score,
-            feedback=score_data.feedback
+            question="",  # We don't need to store the question for simple scoring
+            answer="",   # We don't need to store the answer for simple scoring
+            model_config_id=model_config_id,
+            score=score_data.score
         )
-        return {"message": "Score saved successfully"}
+        
+        return JSONResponse(
+            content={
+                "message": "Score saved successfully",
+                "experiment_group": experiment_group,
+                "score": score_data.score
+            }
+        )
+    except ValueError:
+        logger.error(f"Invalid queryId format: {score_data.queryId}")
+        raise HTTPException(status_code=400, detail="Invalid queryId format")
     except Exception as e:
         logger.error(f"Error saving score: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error saving score")
+        raise HTTPException(status_code=500, detail=f"Error saving score: {str(e)}")
+
+@router.get("/groups", response_model=list[str])
+async def get_experiment_groups(config_service=None):
+    """Get available experiment groups"""
+    if not config_service:
+        raise HTTPException(status_code=500, detail="Configuration service not initialized")
+    return config_service.get_experiment_groups()
