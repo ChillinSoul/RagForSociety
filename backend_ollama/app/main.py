@@ -47,7 +47,7 @@ app = FastAPI()
 # Create ConfigService instance at module level
 config_service = ConfigService(DATABASE_URL)
 
-api_router = APIRouter(prefix="/api")
+api_router = APIRouter(prefix="")
 
 app.add_middleware(
     CORSMiddleware,
