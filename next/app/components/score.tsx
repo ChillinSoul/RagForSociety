@@ -48,7 +48,7 @@ const Score = ({ queryId }: ScoreProps) => {
   };
 
   return (
-    <div className="border border-secondary rounded-2xl p-4 h-full">
+    <div className="border border-secondary rounded-2xl p-4 h-full bg-base-100">
       <h2 className="text-2xl font-bold">Score</h2>
       <div className="flex gap-4">
         <div>
