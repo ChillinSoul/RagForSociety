@@ -1,12 +1,29 @@
-from langchain.prompts import ChatPromptTemplate
-from langchain_community.llms import Ollama
+# app/services/rag_chain.py
+
+from app.configs.prompts import SYSTEM_MESSAGES, create_prompt_templates
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda, RunnableMap, Runnable
 from langchain_groq import ChatGroq
+from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from operator import itemgetter
 import logging
 
 logger = logging.getLogger(__name__)
+
+def create_llm_with_system_message(model_name: str, system_message: str, temperature: float = 0):
+    """Helper function to create a ChatGroq instance with a system message"""
+    messages = [
+        SystemMessagePromptTemplate.from_template(system_message),
+        HumanMessagePromptTemplate.from_template("{input}")
+    ]
+    prompt = ChatPromptTemplate.from_messages(messages)
+    
+    llm = ChatGroq(
+        model=model_name,
+        temperature=temperature,
+    )
+    
+    return prompt | llm
 
 def initialize_rag_chain(
     retriever,
@@ -18,50 +35,40 @@ def initialize_rag_chain(
     llm_back_and_forth=None,
     llm_final=None
 ):
+    # Get all prompt templates
+    prompts = create_prompt_templates()
 
     # Set default LLMs if not provided
     if llm_generate_queries is None:
-        llm_generate_queries = ChatGroq(model="llama-3.2-90b-text-preview", temperature=0.9)
+        llm_generate_queries = create_llm_with_system_message(
+            "llama-3.2-90b-text-preview",
+            SYSTEM_MESSAGES["query_generator"],
+            temperature=0.9
+        )
 
     if llm_verifier is None:
-        llm_verifier = ChatGroq(model="llama-3.2-90b-text-preview")
+        llm_verifier = create_llm_with_system_message(
+            "llama-3.2-90b-text-preview",
+            SYSTEM_MESSAGES["verifier"]
+        )
 
     if llm_precision_checker is None:
-        llm_precision_checker = ChatGroq(model="llama-3.2-90b-text-preview")
+        llm_precision_checker = create_llm_with_system_message(
+            "llama-3.2-90b-text-preview",
+            SYSTEM_MESSAGES["precision_checker"]
+        )
 
     if llm_back_and_forth is None:
-        llm_back_and_forth = ChatGroq(model="llama-3.2-90b-text-preview")
+        llm_back_and_forth = create_llm_with_system_message(
+            "llama-3.2-90b-text-preview",
+            SYSTEM_MESSAGES["back_and_forth"]
+        )
 
     if llm_final is None:
-        llm_final = ChatGroq(model="llama-3.2-90b-text-preview")
-
-    #--------------------------- Retriever Verifier Chain --------------------------
-
-    verifier_template = """
-    Étant donné la question et le document suivants, déterminez si le document est un peu ou beaucoup lié à la question.
-    Répondez "Oui" s'il est lié de près ou de loin, ou <non> s'il ne l'est pas. Ceci est dans le contexte des aides sociales en Belgique.
-    Réfléchis avant de prendre la décision.
-
-    Question : {question}
-
-    Document : {document}
-
-    Le document est-il lié de près ou de loin par rapport à la question ? Réfléchis en interne en plusieurs étapes concises, et ensuite répond par <oui> ou <non>. Si tu n'es pas sûr, répond <oui>.
-    """
-
-    verifier_prompt = ChatPromptTemplate.from_template(verifier_template)
-
-    #--------------------------- Precision Checker Chain --------------------------
-
-    precision_checker_template = """
-    Étant donné la question suivante, déterminez si elle est suffisamment précise pour utiliser le vérificateur de documents en réfléchissant avant de prendre la décision.
-
-    Question : {question}
-
-    La question est-elle suffisamment précise pour utiliser le vérificateur de documents ?  Réfléchis en interne en plusieurs étapes concises, et ensuite répond par <oui> ou <non>. Si tu n'es pas sûr, répond <non>.
-    """
-
-    precision_checker_prompt = ChatPromptTemplate.from_template(precision_checker_template)
+        llm_final = create_llm_with_system_message(
+            "llama-3.2-90b-text-preview",
+            SYSTEM_MESSAGES["final_response"]
+        )
 
     # Define ConditionalVerifier Runnable
     class ConditionalVerifier(Runnable):
@@ -70,6 +77,7 @@ def initialize_rag_chain(
             self.llm_precision_checker = llm_precision_checker
             self.use_verifier = use_verifier
             self.automatic_verifier = automatic_verifier
+            self.prompts = create_prompt_templates()
 
         def invoke(self, inputs, config=None):
             question = inputs['question']
@@ -79,10 +87,11 @@ def initialize_rag_chain(
                 should_use_verifier = True
             elif self.automatic_verifier:
                 # Use precision checker
-                prompt_input = precision_checker_prompt.format(question=question)
-                response = self.llm_precision_checker.invoke(prompt_input)
-                logger.info(f"Precision Checker LLM response: {response.content}")
-                should_use_verifier = '<oui>' in response.content or 'Oui' in response.content or 'oui' in response.content
+                response = self.llm_precision_checker.invoke(
+                    {"input": self.prompts["precision_checker_prompt"].format(question=question)}
+                )
+                logger.info(f"Precision Checker LLM response: {response}")
+                should_use_verifier = '<oui>' in response or 'Oui' in response or 'oui' in response
             else:
                 should_use_verifier = False
 
@@ -91,10 +100,14 @@ def initialize_rag_chain(
                 filtered_results = []
                 for doc in retriever_results:
                     formatted_doc = doc.page_content if hasattr(doc, 'page_content') else doc.get('page_content', '')
-                    prompt_input = verifier_prompt.format(question=question, document=formatted_doc)
-                    response = self.llm_verifier.invoke(prompt_input)
-                    logger.info(f"Verifier LLM response: {response.content}")
-                    if '<oui>' in response.content or 'Oui' in response.content or 'oui' in response.content:
+                    response = self.llm_verifier.invoke(
+                        {"input": self.prompts["verifier_prompt"].format(
+                            question=question,
+                            document=formatted_doc
+                        )}
+                    )
+                    logger.info(f"Verifier LLM response: {response}")
+                    if '<oui>' in response or 'Oui' in response or 'oui' in response:
                         filtered_results.append(doc)
                 retriever_results = filtered_results
                 logger.info(f"Filtered results: {len(retriever_results)} documents after verification")
@@ -114,47 +127,29 @@ def initialize_rag_chain(
         automatic_verifier=automatic_verifier
     )
 
-    #------------------------------ Multi Query Retrieval Chain --------------------------------------
-
-    multi_query_template = """Vous êtes un assistant modèle de langage IA.
-    Votre tâche est de générer cinq versions différentes de la question posée par l'utilisateur
-    afin de récupérer des documents pertinents à partir d'une base de données vectorielle dans le domaine des **aides sociales en Belgique**.
-    En générant plusieurs perspectives de la question de l'utilisateur avec plus de recul,
-    votre objectif est d'aider l'utilisateur à surmonter certaines des limites de la recherche de similarité basée sur la distance.
-    Fournissez ces questions alternatives, séparées par des sauts de ligne. Ne rends que les questions sans texte supplémentaire.
-    Question originale : {question}"""
-
-    prompt_perspectives = ChatPromptTemplate.from_template(multi_query_template)
-
     generate_queries = (
-        prompt_perspectives
+        RunnableLambda(lambda x: {"input": prompts["multi_query_prompt"].format(question=x)})
         | llm_generate_queries
         | StrOutputParser()
         | RunnableLambda(lambda x: [query.strip() for query in x.split("\n") if query.strip()])
     )
 
-    # Updated reciprocal_rank_fusion function
     def reciprocal_rank_fusion(results: list[list], k=60):
         fused_scores = {}
         for docs in results:
             for rank, doc in enumerate(docs):
-                # Use the document's content and metadata as a key to ensure uniqueness
                 doc_key = (doc.page_content, tuple(sorted(doc.metadata.items())) if doc.metadata else None)
                 if doc_key not in fused_scores:
                     fused_scores[doc_key] = {'score': 0, 'doc': doc}
                 fused_scores[doc_key]['score'] += 1 / (rank + k)
 
-        # Sort documents by fused score
         reranked_results = sorted(fused_scores.values(), key=lambda x: x['score'], reverse=True)
-        # Extract documents
         reranked_docs = [entry['doc'] for entry in reranked_results]
         logger.info(f"Reranked results length: {len(reranked_docs)}")
         return reranked_docs[:5]
 
-    # Wrap reciprocal_rank_fusion in RunnableLambda
     reciprocal_rank_fusion_runnable = RunnableLambda(reciprocal_rank_fusion)
 
-    # Adjusted retrieval_chain to pass question along with the results
     retrieval_chain = (
         RunnableMap({'question': lambda x: x})
         | RunnableMap({
@@ -169,31 +164,7 @@ def initialize_rag_chain(
             'question': inputs['question'],
             'retriever_results': reciprocal_rank_fusion(inputs['retriever_results_list'])
         })
-        | conditional_verifier  # Use the ConditionalVerifier here
-    )
-
-    #---------------------------- Back and forth chain ---------------------------
-
-    back_and_forth_template = """Tu es un assistant IA qui aide un utilisateur à poser une question plus précise.
-    Tu as besoin de reformuler la question de l'utilisateur pour obtenir une réponse plus précise.
-    Tu as accès à un questionnaire rempli par l'utilisateur pour t'aider à reformuler la question.
-    Tu as accès à des documents pertinents pour t'aider à reformuler la question.
-
-    Documents : {context}
-
-    Question : {question}
-
-    Questionnaire : {questionaire}
-
-    Reformule la question de l'utilisateur pour obtenir une réponse plus précise.
-    """
-
-    back_and_forth_prompt = ChatPromptTemplate.from_template(back_and_forth_template)
-
-    generate_query_back_and_forth = (
-        back_and_forth_prompt
-        | llm_back_and_forth
-        | StrOutputParser()
+        | conditional_verifier
     )
 
     def format_docs(docs):
@@ -214,28 +185,18 @@ def initialize_rag_chain(
     def get_context(data):
         return format_docs(data["retriever_results"])
 
-    #--------------------------- Main Chain ---------------------------------
-
-    template = """Tu es une IA qui a pour objectif d'aider des personnes à trouver s'ils peuvent toucher des aides sociales.
-    Réponds aux questions selon le contexte et donne des **explications concises**.
-    Si tu n'as pas de réponse, ou bien qu'il n'y a rien dans le contexte dis-le !
-    Si tu as besoin que l'auteur reformule la question, aide-le en proposant plusieurs choix, mais ne réponds pas qu'avec les liens, donne des explications dans ta réponse.
-    Si le contexte te procure un lien utile, écris-le dans ta réponse au **format Markdown**.
-    **Écris ta réponse dans le format Markdown**.
-    Réponds à la question uniquement en te basant sur le contexte suivant :
-    {context}
-
-    Question : {question}
-    """
-
-    prompt = ChatPromptTemplate.from_template(template)
+    generate_query_back_and_forth = (
+        RunnableLambda(lambda x: {"input": prompts["back_and_forth_prompt"].format(**x)})
+        | llm_back_and_forth
+        | StrOutputParser()
+    )
 
     final_chain = (
         RunnableMap({
             "context": get_context,
             "question": itemgetter("question")
         })
-        | prompt
+        | RunnableLambda(lambda x: {"input": prompts["final_response_prompt"].format(**x)})
         | llm_final
         | StrOutputParser()
     )

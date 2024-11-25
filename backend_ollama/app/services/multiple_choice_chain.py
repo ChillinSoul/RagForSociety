@@ -1,8 +1,8 @@
-from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
+# app/services/multiple_choice_chain.py
+
+from app.configs.prompts import create_prompt_templates
 from langchain.chains import LLMChain
 from langchain.output_parsers import PydanticOutputParser
-from langchain_community.llms import Ollama
-from langchain_openai import ChatOpenAI
 from langchain_groq import ChatGroq
 from pydantic import BaseModel, Field, ValidationError
 import logging
@@ -26,62 +26,20 @@ def initialize_multiple_choice_chain():
     # Initialize the output parser
     output_parser = PydanticOutputParser(pydantic_object=MCQuestions)
 
-    # Define the prompt templates
-    system_template = """
-    Tu es un assistant qui génère des questions à choix multiples sous forme de JSON pour obtenir des informations précises et personnelles sur l'utilisateur.
-    Les questions doivent porter sur les **caractéristiques personnelles, habitudes, préférences, besoins** ou **situations spécifiques** de l'utilisateur, et être basées sur le contexte fourni.
-    Chaque question doit être directement liée à l'utilisateur, concise, et proposer 3 à 4 options de réponse pertinentes. **La dernière option doit toujours être "N/A"**.
-    Le format du JSON doit être **strictement respecté** comme suit, sans explication supplémentaire ou texte non formaté :
-
-    {{
-      "questions": [
-        {{
-          "text": "Question sur l'utilisateur ici",
-          "options": [
-            "Option 1",
-            "Option 2",
-            "Option 3",
-            "N/A"
-          ]
-        }},
-        {{
-          "text": "Autre question sur l'utilisateur ici",
-          "options": [
-            "Option A",
-            "Option B",
-            "Option C",
-            "N/A"
-          ]
-        }}
-      ]
-    }}
-
-    Répond uniquement en **JSON** et sans aucun texte additionnel.
-    """
-
-    human_template = """
-    Documents : {context}
-
-    Question initiale : {question}
-    """
-
-    system_message_prompt = SystemMessagePromptTemplate.from_template(system_template)
-    human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
-
-    mc_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
+    # Get prompt templates
+    prompts = create_prompt_templates()
+    mc_prompt = prompts["mc_prompt"]
 
     # Initialize the LLM
-    # llm = Ollama(model="llama3.1")
-    #llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
-    #llm = ChatGroq( model="llama-3.2-11b-text-preview")
-    #llm = ChatGroq( model="llama-3.2-90b-text-preview")
-    llm = ChatGroq( model="llama-3.1-70b-versatile")
+    llm = ChatGroq(
+        model="llama-3.1-70b-versatile",
+        temperature=0.7
+    )
     
-    # Define the chain without the output_parser
+    # Define the chain
     mc_chain = LLMChain(
         llm=llm,
         prompt=mc_prompt
-        # Remove output_parser
     )
 
     def format_docs(docs: list, max_chars: int = 2000) -> str:
@@ -123,15 +81,25 @@ def initialize_multiple_choice_chain():
 
         try:
             # Use the invoke method
-            response = mc_chain.invoke({"context": context, "question": question})
+            response = mc_chain.invoke({
+                "context": context,
+                "question": question
+            })
             logger.info(f"LLMChain response: {response}")
 
-            generated_text = response.get('text', '')
+            # Extract the generated text from the response
+            if isinstance(response, dict) and 'text' in response:
+                generated_text = response['text']
+            else:
+                # Handle ChatGroq response format
+                content = response.content if hasattr(response, 'content') else str(response)
+                generated_text = content
+
             if not generated_text:
                 logger.error("No text output from LLM.")
                 return {}
 
-            # Manually parse the output
+            # Try to parse the generated text
             parsed_response = output_parser.parse(generated_text)
             return parsed_response.model_dump()
 
@@ -141,6 +109,7 @@ def initialize_multiple_choice_chain():
 
         except Exception as e:
             logger.error(f"Error during LLM call: {str(e)}")
+            logger.error(f"Response was: {response}")
             return {}
 
     logger.info("Multiple-choice chain with JSON output initialized successfully")
