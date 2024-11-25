@@ -168,18 +168,33 @@ def initialize_rag_chain(
     )
 
     def format_docs(docs):
+        """
+        Formats retrieved documents by including their source URLs and content.
+        """
         formatted_docs = []
         for doc in docs:
+            # Handle different document types
             if isinstance(doc, tuple) and len(doc) == 2:
                 document, score = doc
                 content = document.page_content if hasattr(document, 'page_content') else document.get('page_content', '')
-                formatted_docs.append(content)
+                url = document.metadata.get('url', 'No URL available') if hasattr(document, 'metadata') else 'No URL available'
             elif isinstance(doc, dict):
-                formatted_docs.append(doc.get('page_content', ''))
+                content = doc.get('page_content', '')
+                url = doc.get('metadata', {}).get('url', 'No URL available')
             elif hasattr(doc, 'page_content'):
-                formatted_docs.append(doc.page_content)
+                content = doc.page_content
+                url = doc.metadata.get('url', 'No URL available') if hasattr(doc, 'metadata') else 'No URL available'
             else:
-                formatted_docs.append(str(doc))
+                content = str(doc)
+                url = 'No URL available'
+            
+            # Format document with URL
+            formatted_doc = f"""Source: {url}
+    ---
+    {content}
+    ---"""
+            formatted_docs.append(formatted_doc)
+        
         return "\n\n".join(formatted_docs)
 
     def get_context(data):

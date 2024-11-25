@@ -51,7 +51,7 @@ const fetchResponse = async (question: string): Promise<ApiResponse> => {
 
 const fetchResponseBNF = async (
   question: string,
-  questionaire: Array<qnr>,
+  questionaire: Array<qnr>
 ): Promise<ApiResponse> => {
   const res = await fetch("http://127.0.0.1:8000/get-response-bnf/", {
     method: "POST",
@@ -73,20 +73,24 @@ const Home = () => {
   const [query, setQuery] = useState<string>("");
   const [showResponse, setShowResponse] = useState<boolean>(false);
   const [showMcq, setShowMcq] = useState<boolean>(false);
-  const [questionaireAnswered, setQuestionaireAnswered] =
-    useState<boolean>(false);
+  const [questionaireAnswered, setQuestionaireAnswered] = useState<boolean>(
+    false
+  );
 
   const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
 
   // First mutation (Initial question submission)
-  const responseMutation: UseMutationResult<ApiResponse, Error, string> =
-    useMutation({
-      mutationFn: fetchResponse,
-      onSuccess: () => {
-        setShowResponse(true);
-        setShowMcq(false);
-      },
-    });
+  const responseMutation: UseMutationResult<
+    ApiResponse,
+    Error,
+    string
+  > = useMutation({
+    mutationFn: fetchResponse,
+    onSuccess: () => {
+      setShowResponse(true);
+      setShowMcq(false);
+    },
+  });
 
   // Second mutation (MCQ submission)
   const responseBNFMutation: UseMutationResult<
@@ -193,7 +197,6 @@ const Home = () => {
         handleSubmit={handleSubmit}
         responseMutation={responseMutation}
         responseBNFMutation={responseBNFMutation}
-        queryId={responseMutation.data?.query_id || ""}
       />
     </div>
   );

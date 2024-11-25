@@ -1,14 +1,12 @@
 // app/components/queryBar.tsx
 import React, { useState, useRef } from "react";
 import { Send, Mic, MicOff } from "lucide-react";
-import Score from "./score";
 interface QueryBarProps {
   query: string;
   setQuery: (query: string) => void;
   handleSubmit: (e: React.FormEvent) => void;
   responseMutation: any;
   responseBNFMutation: any;
-  queryId: string;
 }
 
 const QueryBar = ({
@@ -17,7 +15,6 @@ const QueryBar = ({
   handleSubmit,
   responseMutation,
   responseBNFMutation,
-  queryId,
 }: QueryBarProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -127,7 +124,6 @@ const QueryBar = ({
         >
           <Send />
         </button>
-        <Score queryId={queryId} />
       </form>
     </>
   );

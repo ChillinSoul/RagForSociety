@@ -45,18 +45,31 @@ def initialize_multiple_choice_chain():
     def format_docs(docs: list, max_chars: int = 2000) -> str:
         """
         Formats retrieved documents by truncating them and preparing them for inclusion in the context.
+        Includes source URLs for each document.
         """
         formatted_docs = []
         for i, doc in enumerate(docs):
-            if i > 2:
+            if i > 2:  # Limit to first 3 documents
                 break
+                
+            # Extract content and URL based on document type
             if hasattr(doc, 'page_content'):
                 content = doc.page_content
+                url = doc.metadata.get('url', 'No URL available') if hasattr(doc, 'metadata') else 'No URL available'
             elif isinstance(doc, dict):
                 content = doc.get('page_content', '')
+                url = doc.get('metadata', {}).get('url', 'No URL available')
             else:
                 content = str(doc)
-            formatted_docs.append(content[:max_chars])
+                url = 'No URL available'
+            
+            # Format document with URL
+            formatted_doc = f"""Source: {url}
+---
+{content[:max_chars]}
+---"""
+            formatted_docs.append(formatted_doc)
+            
         return "\n\n".join(formatted_docs)
 
     def get_mc_context(data: dict) -> str:
