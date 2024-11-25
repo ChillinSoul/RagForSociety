@@ -6,6 +6,8 @@ from langchain_core.runnables import RunnablePassthrough, RunnableLambda, Runnab
 from langchain_groq import ChatGroq
 from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from operator import itemgetter
+from app.configs.prompts import SYSTEM_MESSAGES
+from app.configs.llm_config import get_llm
 import logging
 
 logger = logging.getLogger(__name__)
@@ -29,46 +31,16 @@ def initialize_rag_chain(
     retriever,
     use_verifier=True,
     automatic_verifier=False,
-    llm_generate_queries=None,
-    llm_verifier=None,
-    llm_precision_checker=None,
-    llm_back_and_forth=None,
-    llm_final=None
 ):
     # Get all prompt templates
     prompts = create_prompt_templates()
 
     # Set default LLMs if not provided
-    if llm_generate_queries is None:
-        llm_generate_queries = create_llm_with_system_message(
-            "llama-3.2-90b-text-preview",
-            SYSTEM_MESSAGES["query_generator"],
-            temperature=0.9
-        )
-
-    if llm_verifier is None:
-        llm_verifier = create_llm_with_system_message(
-            "llama-3.2-90b-text-preview",
-            SYSTEM_MESSAGES["verifier"]
-        )
-
-    if llm_precision_checker is None:
-        llm_precision_checker = create_llm_with_system_message(
-            "llama-3.2-90b-text-preview",
-            SYSTEM_MESSAGES["precision_checker"]
-        )
-
-    if llm_back_and_forth is None:
-        llm_back_and_forth = create_llm_with_system_message(
-            "llama-3.2-90b-text-preview",
-            SYSTEM_MESSAGES["back_and_forth"]
-        )
-
-    if llm_final is None:
-        llm_final = create_llm_with_system_message(
-            "llama-3.2-90b-text-preview",
-            SYSTEM_MESSAGES["final_response"]
-        )
+    llm_generate_queries = get_llm("query_generator", SYSTEM_MESSAGES["query_generator"], temperature=0.9)
+    llm_verifier = get_llm("verifier", SYSTEM_MESSAGES["verifier"])
+    llm_precision_checker = get_llm("precision_checker", SYSTEM_MESSAGES["precision_checker"])
+    llm_back_and_forth = get_llm("back_and_forth", SYSTEM_MESSAGES["back_and_forth"])
+    llm_final = get_llm("final", SYSTEM_MESSAGES["final_response"])
 
     # Define ConditionalVerifier Runnable
     class ConditionalVerifier(Runnable):
