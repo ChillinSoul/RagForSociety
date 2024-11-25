@@ -1,6 +1,7 @@
 # app/configs/llm_config.py
 
 from langchain_groq import ChatGroq
+from langchain_ollama import ChatOllama
 from langchain_community.llms import Ollama
 from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 
@@ -27,7 +28,7 @@ CONFIGS = {
         }
     },
     "ollama-3.1": {
-        "llm_class": Ollama,
+        "llm_class": ChatOllama,
         "models": {
             "query_generator": "llama3.1",
             "verifier": "llama3.1",
@@ -38,7 +39,7 @@ CONFIGS = {
         }
     },
     "ollama-3.1-70b": {
-        "llm_class": Ollama,
+        "llm_class": ChatOllama,
         "models": {
             "query_generator": "llama3.1:70b",
             "verifier": "llama3.1:70b",
@@ -49,7 +50,7 @@ CONFIGS = {
         }
     },
     "ollama-hybrid": {
-        "llm_class": Ollama,
+        "llm_class": ChatOllama,
         "models": {
             "query_generator": "llama3.1",
             "verifier": "llama3.1:70b",
