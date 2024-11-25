@@ -131,7 +131,7 @@ const QueryBar = ({
       
     </form>
     <div className="absolute bottom-20 right-0 z-40 p-4">
-    <Score queryId={queryId} />
+    {/* <Score queryId={queryId} /> */}
     </div>
     </div>
   );
