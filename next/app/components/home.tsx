@@ -24,6 +24,7 @@ interface ApiResponse {
       options: string[];
     }>;
   };
+  query_id: string;
 }
 
 interface qnr {
@@ -169,7 +170,11 @@ const Home = () => {
         {(responseMutation.isSuccess || responseBNFMutation.isSuccess) &&
           showResponse &&
           !questionaireAnswered && (
-            <button className="btn ml-8 " onClick={() => setShowMcq(!showMcq)} tabIndex={0}>
+            <button
+              className="btn ml-8 "
+              onClick={() => setShowMcq(!showMcq)}
+              tabIndex={0}
+            >
               {showMcq
                 ? "Afficher la réponse"
                 : "Améliorer la réponse avec des questions"}
@@ -188,6 +193,7 @@ const Home = () => {
         handleSubmit={handleSubmit}
         responseMutation={responseMutation}
         responseBNFMutation={responseBNFMutation}
+        queryId={responseMutation.data?.query_id || ""}
       />
     </div>
   );

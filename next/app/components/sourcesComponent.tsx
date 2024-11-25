@@ -34,7 +34,10 @@ const SourcesComponent: React.FC<SourcesProps> = ({ retrieverResults }) => {
           </a>
 
           {/* Toggle Button for Collapse/Expand */}
-          <button onClick={() => setIsExpanded(!isExpanded)} className="ml-2 btn btn-neutral">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="ml-2 btn btn-neutral"
+          >
             {isExpanded ? "Cacher" : "Montrer"} le resumé de la page
           </button>
 

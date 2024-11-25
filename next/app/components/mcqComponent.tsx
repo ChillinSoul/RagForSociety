@@ -49,7 +49,7 @@ const McqComponent = ({ questions, onSubmit }: McqProps) => {
                 key={optionIndex}
                 type="button"
                 tabIndex={0}
-                className={`btn ${answers[questionIndex] === option ? "btn-secondary" : "btn-primary"} focus:bg-purple-500`}
+                className={`btn ${answers[questionIndex] === option ? "btn-secondary" : "btn-primary"} focus:bg-purple-500 focus:text-white`}
                 onClick={() => handleOptionClick(questionIndex, option)}
               >
                 {option}
