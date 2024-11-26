@@ -132,7 +132,7 @@ ollama pull llama3.1:70b
 | ChatGPT       | High reliability, great outputs        | Most expensive            | None                |
 | Ollama 8B     | Free, minimal resources                | Lower quality             | 16GB RAM, 20GB disk |
 | Ollama 70B    | Free, high quality                     | Very resource intensive   | 40GB RAM, 40GB disk |
-| Ollama Hybrid | Free, good balance                     | Moderate resources needed | 40GB RAM, 46GB disk |
+| Ollama Hybrid | Free, good balance                     | Very resource intensive   | 40GB RAM, 60GB disk |
 
 Configurations are defined in `backend_ollama/app/configs/llm_config.py`. The Groq configuration is recommended for most users as it provides the best balance of performance, cost, and ease of use.
 
