@@ -11,7 +11,7 @@ const TokenCounter = ({
   const usagePercentage = (totalTokens / tokenLimit) * 100;
 
   return (
-    <div className="fixed bottom-24 right-8 bg-base-200 p-4 rounded-lg shadow-lg z-50">
+    <div className="fixed bottom-32 right-16 bg-base-200 p-4 rounded-lg shadow-lg z-50">
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-4">
           <span className="text-sm font-medium">Prompt Tokens:</span>
