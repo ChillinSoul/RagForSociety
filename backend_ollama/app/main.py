@@ -15,7 +15,6 @@ import logging
 import getpass
 import os
 
-
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import StreamingResponse
 from app.services.speech_to_text import transcribe_audio
@@ -35,7 +34,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -64,14 +62,22 @@ async def startup_event():
         retriever = vectorstore.as_retriever()
 
         logger.info("Initializing RAG chain")
-        retrieval_chain, final_chain, generate_query_back_and_forth = initialize_rag_chain(
+        # Update to unpack all four returned values
+        retrieval_chain, final_chain, generate_query_back_and_forth, token_counter = initialize_rag_chain(
             retriever,
             automatic_verifier=True,
             use_verifier=True
         )
 
         mc_chain = initialize_multiple_choice_chain()
-        rag_chain.initialize_rag_chain_global(retrieval_chain, final_chain, mc_chain, generate_query_back_and_forth)
+        # Update to pass token_counter to initialize_rag_chain_global
+        rag_chain.initialize_rag_chain_global(
+            retrieval_chain, 
+            final_chain, 
+            mc_chain, 
+            generate_query_back_and_forth,
+            token_counter
+        )
         logger.info("Application initialized successfully")
     except Exception as e:
         logger.error(f"Error during initialization: {str(e)}")
@@ -96,8 +102,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "An unexpected error occurred."}
     )
-
-
 
 if __name__ == "__main__":
     import uvicorn

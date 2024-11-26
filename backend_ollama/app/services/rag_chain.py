@@ -1,5 +1,4 @@
-# app/services/rag_chain.py
-
+from typing import Dict, Any, Tuple
 from app.configs.prompts import SYSTEM_MESSAGES, create_prompt_templates
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda, RunnableMap, Runnable
@@ -9,8 +8,52 @@ from operator import itemgetter
 from app.configs.prompts import SYSTEM_MESSAGES
 from app.configs.llm_config import get_llm
 import logging
+import tiktoken
 
 logger = logging.getLogger(__name__)
+
+class TokenCounter:
+    def __init__(self):
+        self.reset()
+        logger.info("TokenCounter initialized")
+    
+    def reset(self):
+        self.token_counts = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0
+        }
+        logger.info("TokenCounter reset")
+    
+    def on_llm_start(self, input_text: str):
+        token_count = count_tokens(input_text)
+        self.token_counts["prompt_tokens"] += token_count
+        logger.info(f"Added {token_count} prompt tokens. New total: {self.token_counts['prompt_tokens']}")
+    
+    def on_llm_end(self, output_text: str):
+        token_count = count_tokens(output_text)
+        self.token_counts["completion_tokens"] += token_count
+        logger.info(f"Added {token_count} completion tokens. New total: {self.token_counts['completion_tokens']}")
+    
+    def get_counts(self):
+        total = sum(self.token_counts.values())
+        counts = {
+            "prompt_tokens": self.token_counts["prompt_tokens"],
+            "completion_tokens": self.token_counts["completion_tokens"],
+            "total_tokens": total
+        }
+        logger.info(f"Current token counts: {counts}")
+        return counts
+
+def count_tokens(text: str) -> int:
+    """Count tokens in text using tiktoken"""
+    try:
+        encoding = tiktoken.get_encoding("cl100k_base")
+        token_count = len(encoding.encode(str(text)))
+        logger.info(f"Counted {token_count} tokens for text of length {len(str(text))}")
+        return token_count
+    except Exception as e:
+        logger.error(f"Error counting tokens: {e}")
+        return 0
 
 def create_llm_with_system_message(model_name: str, system_message: str, temperature: float = 0):
     """Helper function to create a ChatGroq instance with a system message"""
@@ -31,7 +74,9 @@ def initialize_rag_chain(
     retriever,
     use_verifier=True,
     automatic_verifier=False,
-):
+) -> Tuple[Runnable, Runnable, Runnable, TokenCounter]:
+    token_counter = TokenCounter()
+    
     # Get all prompt templates
     prompts = create_prompt_templates()
 
@@ -42,7 +87,15 @@ def initialize_rag_chain(
     llm_back_and_forth = get_llm("back_and_forth", SYSTEM_MESSAGES["back_and_forth"])
     llm_final = get_llm("final", SYSTEM_MESSAGES["final_response"])
 
-    # Define ConditionalVerifier Runnable
+    def count_tokens_wrapper(chain):
+        def wrapped(input_data):
+            input_str = str(input_data)
+            token_counter.on_llm_start(input_str)
+            result = chain.invoke(input_data)
+            token_counter.on_llm_end(str(result))
+            return result
+        return wrapped
+
     class ConditionalVerifier(Runnable):
         def __init__(self, llm_verifier, llm_precision_checker, use_verifier=True, automatic_verifier=False):
             self.llm_verifier = llm_verifier
@@ -58,37 +111,37 @@ def initialize_rag_chain(
             if self.use_verifier:
                 should_use_verifier = True
             elif self.automatic_verifier:
-                # Use precision checker
+                # Count tokens and use precision checker
+                token_counter.on_llm_start(str(question))
                 response = self.llm_precision_checker.invoke(
                     {"input": self.prompts["precision_checker_prompt"].format(question=question)}
                 )
-                # logger.info(f"Precision Checker LLM response: {response}")
-                # should_use_verifier = '<oui>' in response or 'Oui' in response or 'oui' in response
+                token_counter.on_llm_end(str(response))
                 should_use_verifier = '<oui>' in response
                 logger.info(f"Precision checker response: {response}")
             else:
                 should_use_verifier = False
 
             if should_use_verifier:
-                # Perform verification
                 logger.info("Running verifier")
                 filtered_results = []
                 for doc in retriever_results:
                     formatted_doc = doc.page_content if hasattr(doc, 'page_content') else doc.get('page_content', '')
+                    
+                    # Count tokens for verification
+                    token_counter.on_llm_start(str(formatted_doc))
                     response = self.llm_verifier.invoke(
                         {"input": self.prompts["verifier_prompt"].format(
                             question=question,
                             document=formatted_doc
                         )}
                     )
-                    # extract the text from the response
+                    token_counter.on_llm_end(str(response))
+                    
                     response = response.content if hasattr(response, 'content') else str(response)
-                    # logger.info(f"Verifier LLM response: {response}")
-                    # if '<oui>' in response or 'Oui' in response or 'oui' in response:
                     if '<oui>' in response:
                         logger.info("Verifier accepted document")
                         filtered_results.append(doc)
-                    logger.info(f"Filtered results documents: {filtered_results}")
                 retriever_results = filtered_results
                 logger.info(f"Filtered results: {len(retriever_results)} documents after verification")
             else:
@@ -109,7 +162,7 @@ def initialize_rag_chain(
 
     generate_queries = (
         RunnableLambda(lambda x: {"input": prompts["multi_query_prompt"].format(question=x)})
-        | llm_generate_queries
+        | RunnableLambda(count_tokens_wrapper(llm_generate_queries))
         | StrOutputParser()
         | RunnableLambda(lambda x: [query.strip() for query in x.split("\n") if query.strip()])
     )
@@ -148,12 +201,8 @@ def initialize_rag_chain(
     )
 
     def format_docs(docs):
-        """
-        Formats retrieved documents by including their source URLs and content.
-        """
         formatted_docs = []
         for doc in docs:
-            # Handle different document types
             if isinstance(doc, tuple) and len(doc) == 2:
                 document, score = doc
                 content = document.page_content if hasattr(document, 'page_content') else document.get('page_content', '')
@@ -168,11 +217,7 @@ def initialize_rag_chain(
                 content = str(doc)
                 url = 'No URL available'
             
-            # Format document with URL
-            formatted_doc = f"""Source: {url}
-    ---
-    {content}
-    ---"""
+            formatted_doc = f"""Source: {url}\n---\n{content}\n---"""
             formatted_docs.append(formatted_doc)
         
         return "\n\n".join(formatted_docs)
@@ -182,7 +227,7 @@ def initialize_rag_chain(
 
     generate_query_back_and_forth = (
         RunnableLambda(lambda x: {"input": prompts["back_and_forth_prompt"].format(**x)})
-        | llm_back_and_forth
+        | RunnableLambda(count_tokens_wrapper(llm_back_and_forth))
         | StrOutputParser()
     )
 
@@ -192,9 +237,9 @@ def initialize_rag_chain(
             "question": itemgetter("question")
         })
         | RunnableLambda(lambda x: {"input": prompts["final_response_prompt"].format(**x)})
-        | llm_final
+        | RunnableLambda(count_tokens_wrapper(llm_final))
         | StrOutputParser()
     )
 
     logger.info("RAG chain initialized successfully")
-    return retrieval_chain, final_chain, generate_query_back_and_forth
+    return retrieval_chain, final_chain, generate_query_back_and_forth, token_counter

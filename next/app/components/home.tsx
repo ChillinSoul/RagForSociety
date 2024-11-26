@@ -6,7 +6,14 @@ import SourcesComponent from "./sourcesComponent";
 import ResponseComponent from "./responseComponent";
 import McqComponent from "./mcqComponent";
 import QueryBar from "./queryBar";
+import TokenCounter from "./TokenCounter";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
+
+interface TokenCounts {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
 
 interface ApiResponse {
   retriever_results: Array<{
@@ -17,14 +24,13 @@ interface ApiResponse {
     score: number;
   }>;
   llm_response: string;
-
   mc_response: {
     questions: Array<{
       text: string;
       options: string[];
     }>;
   };
-  query_id: string;
+  token_counts: TokenCounts;
 }
 
 interface qnr {
@@ -76,23 +82,40 @@ const Home = () => {
   const [questionaireAnswered, setQuestionaireAnswered] = useState<boolean>(
     false
   );
+  const [tokenCounts, setTokenCounts] = useState<TokenCounts>({
+    prompt_tokens: 0,
+    completion_tokens: 0,
+    total_tokens: 0,
+  });
 
-  const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
+  const [parent, enableAnimations] = useAutoAnimate();
 
-  // First mutation (Initial question submission)
   const responseMutation: UseMutationResult<
     ApiResponse,
     Error,
     string
   > = useMutation({
     mutationFn: fetchResponse,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Response received:", data);
+      console.log("Token counts:", data.token_counts);
       setShowResponse(true);
       setShowMcq(false);
+      setTokenCounts((prevCounts) => {
+        const newCounts = {
+          prompt_tokens:
+            prevCounts.prompt_tokens + data.token_counts.prompt_tokens,
+          completion_tokens:
+            prevCounts.completion_tokens + data.token_counts.completion_tokens,
+          total_tokens:
+            prevCounts.total_tokens + data.token_counts.total_tokens,
+        };
+        console.log("Updated token counts:", newCounts);
+        return newCounts;
+      });
     },
   });
 
-  // Second mutation (MCQ submission)
   const responseBNFMutation: UseMutationResult<
     ApiResponse,
     Error,
@@ -100,8 +123,22 @@ const Home = () => {
   > = useMutation({
     mutationFn: ({ question, questionaire }) =>
       fetchResponseBNF(question, questionaire),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("BNF Response received:", data);
+      console.log("BNF Token counts:", data.token_counts);
       setShowResponse(true);
+      setTokenCounts((prevCounts) => {
+        const newCounts = {
+          prompt_tokens:
+            prevCounts.prompt_tokens + data.token_counts.prompt_tokens,
+          completion_tokens:
+            prevCounts.completion_tokens + data.token_counts.completion_tokens,
+          total_tokens:
+            prevCounts.total_tokens + data.token_counts.total_tokens,
+        };
+        console.log("Updated BNF token counts:", newCounts);
+        return newCounts;
+      });
     },
   });
 
@@ -109,7 +146,6 @@ const Home = () => {
     e.preventDefault();
     setShowResponse(false);
     if (query) {
-      // Reset responseBNFMutation whenever a new query is submitted
       responseBNFMutation.reset();
       responseMutation.mutate(query);
       setQuestionaireAnswered(false);
@@ -124,6 +160,8 @@ const Home = () => {
       setQuestionaireAnswered(true);
     }
   };
+
+  const isPending = responseMutation.isPending || responseBNFMutation.isPending;
 
   return (
     <div className="w-full h-full relative">
@@ -170,12 +208,13 @@ const Home = () => {
             </>
           )}
       </ul>
+
       <div className="absolute bottom-24 w-full z-50">
         {(responseMutation.isSuccess || responseBNFMutation.isSuccess) &&
           showResponse &&
           !questionaireAnswered && (
             <button
-              className="btn ml-8 "
+              className="btn ml-8"
               onClick={() => setShowMcq(!showMcq)}
               tabIndex={0}
             >
@@ -185,12 +224,19 @@ const Home = () => {
             </button>
           )}
       </div>
-      {(responseMutation.isPending || responseBNFMutation.isPending) && (
+
+      <TokenCounter
+        promptTokens={tokenCounts.prompt_tokens}
+        completionTokens={tokenCounts.completion_tokens}
+        isPending={isPending}
+      />
+
+      {isPending && (
         <div className="mx-8">
-          {" "}
-          <progress className="progress"></progress>{" "}
+          <progress className="progress"></progress>
         </div>
       )}
+
       <QueryBar
         query={query}
         setQuery={setQuery}

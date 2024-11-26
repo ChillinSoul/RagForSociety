@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 class ScrapedData(BaseModel):
     url: str
@@ -20,3 +20,14 @@ class Questionaire():
 class QuestionBackAndForthRequest(BaseModel):
     question: str
     questionaire: List[dict[str, str]]
+
+class TokenCount(BaseModel):
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+class ApiResponse(BaseModel):
+    retriever_results: list
+    llm_response: str
+    mc_response: dict
+    token_counts: TokenCount
