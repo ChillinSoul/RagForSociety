@@ -1,8 +1,6 @@
-# app/configs/llm_config.py
-
 from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
-from langchain_community.llms import Ollama
+from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 
 def create_llm_with_system_message(llm, system_message: str):
@@ -14,9 +12,8 @@ def create_llm_with_system_message(llm, system_message: str):
     prompt = ChatPromptTemplate.from_messages(messages)
     return prompt | llm
 
-# Different LLM configurations
 CONFIGS = {
-    "groq": {
+    "groq": {  # Recommended for best performance/cost ratio
         "llm_class": ChatGroq,
         "models": {
             "query_generator": "llama-3.2-90b-text-preview",
@@ -27,54 +24,54 @@ CONFIGS = {
             "multiple_choice": "llama-3.1-70b-versatile"
         }
     },
-    "ollama-3.1": {
-        "llm_class": ChatOllama,
+    "chatgpt": {  # Alternative cloud option
+        "llm_class": ChatOpenAI,
         "models": {
-            "query_generator": "llama3.1",
-            "verifier": "llama3.1",
-            "precision_checker": "llama3.1",
-            "back_and_forth": "llama3.1",
-            "final": "llama3.1",
-            "multiple_choice": "llama3.1"
+            "query_generator": "gpt-3.5-turbo",
+            "verifier": "gpt-4-turbo-preview",
+            "precision_checker": "gpt-4-turbo-preview",
+            "back_and_forth": "gpt-3.5-turbo",
+            "final": "gpt-4-turbo-preview",
+            "multiple_choice": "gpt-4-turbo-preview"
         }
     },
-    "ollama-3.1-70b": {
+    "ollama-3.1": {  # Lightweight local configuration
         "llm_class": ChatOllama,
         "models": {
-            "query_generator": "llama3.1:70b",
-            "verifier": "llama3.1:70b",
-            "precision_checker": "llama3.1:70b",
-            "back_and_forth": "llama3.1:70b",
-            "final": "llama3.1:70b",
-            "multiple_choice": "llama3.1:70b"
+            "query_generator": "llama2:8b",
+            "verifier": "llama2:8b",
+            "precision_checker": "llama2:8b",
+            "back_and_forth": "llama2:8b",
+            "final": "llama2:8b",
+            "multiple_choice": "llama2:8b"
         }
     },
-    "ollama-hybrid": {
+    "ollama-3.1-70b": {  # Full local configuration
         "llm_class": ChatOllama,
         "models": {
-            "query_generator": "llama3.1",
-            "verifier": "llama3.1:70b",
-            "precision_checker": "llama3.1:70b",
-            "back_and_forth": "llama3.1",
-            "final": "llama3.1:70b",
-            "multiple_choice": "llama3.1:70b"
+            "query_generator": "llama2:70b",
+            "verifier": "llama2:70b",
+            "precision_checker": "llama2:70b",
+            "back_and_forth": "llama2:70b",
+            "final": "llama2:70b",
+            "multiple_choice": "llama2:70b"
         }
     },
-    "ollama-3.2": {
+    "ollama-hybrid": {  # Balanced local configuration
         "llm_class": ChatOllama,
         "models": {
-            "query_generator": "llama3.2-vision:11b",
-            "verifier": "llama3.2-vision:11b",
-            "precision_checker": "llama3.2-vision:11b",
-            "back_and_forth": "llama3.2-vision:11b",
-            "final": "llama3.2-vision:11b",
-            "multiple_choice": "llama3.2-vision:11b"
+            "query_generator": "llama2:8b",
+            "verifier": "llama2:8b",
+            "precision_checker": "llama2:70b",
+            "back_and_forth": "llama2:8b",
+            "final": "llama2:70b",
+            "multiple_choice": "llama2:70b"
         }
-    },
+    }
 }
 
 # Set the active configuration here
-ACTIVE_CONFIG = "groq"
+ACTIVE_CONFIG = "chatgpt"  # Recommended for best performance
 
 def get_llm(llm_type: str, system_message: str, temperature: float = 0):
     """Get an LLM instance based on the active configuration"""
