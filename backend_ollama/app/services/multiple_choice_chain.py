@@ -1,5 +1,3 @@
-# app/services/multiple_choice_chain.py
-
 from app.configs.prompts import create_prompt_templates, SYSTEM_MESSAGES
 from app.configs.llm_config import get_llm
 from langchain.output_parsers import PydanticOutputParser

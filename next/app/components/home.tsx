@@ -146,6 +146,12 @@ const Home = () => {
     e.preventDefault();
     setShowResponse(false);
     if (query) {
+      // Reset token counts when submitting a new query
+      setTokenCounts({
+        prompt_tokens: 0,
+        completion_tokens: 0,
+        total_tokens: 0,
+      });
       responseBNFMutation.reset();
       responseMutation.mutate(query);
       setQuestionaireAnswered(false);

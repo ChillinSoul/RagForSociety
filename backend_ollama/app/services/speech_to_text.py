@@ -1,4 +1,3 @@
-# speech_to_text.py
 from groq import Groq
 
 def transcribe_audio(file_path: str) -> str:

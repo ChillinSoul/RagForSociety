@@ -1,5 +1,3 @@
-# app/configs/prompts.py
-
 from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 
 # System messages for different LLMs

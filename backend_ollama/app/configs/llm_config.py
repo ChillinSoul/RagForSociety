@@ -71,7 +71,7 @@ CONFIGS = {
 }
 
 # Set the active configuration here
-ACTIVE_CONFIG = "chatgpt"  # Recommended for best performance
+ACTIVE_CONFIG = "groq"  # Recommended for best performance
 
 def get_llm(llm_type: str, system_message: str, temperature: float = 0):
     """Get an LLM instance based on the active configuration"""
