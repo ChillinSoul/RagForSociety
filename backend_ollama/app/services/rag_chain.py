@@ -62,13 +62,16 @@ def initialize_rag_chain(
                 response = self.llm_precision_checker.invoke(
                     {"input": self.prompts["precision_checker_prompt"].format(question=question)}
                 )
-                logger.info(f"Precision Checker LLM response: {response}")
-                should_use_verifier = '<oui>' in response or 'Oui' in response or 'oui' in response
+                # logger.info(f"Precision Checker LLM response: {response}")
+                # should_use_verifier = '<oui>' in response or 'Oui' in response or 'oui' in response
+                should_use_verifier = '<oui>' in response
+                logger.info(f"Precision checker response: {response}")
             else:
                 should_use_verifier = False
 
             if should_use_verifier:
                 # Perform verification
+                logger.info("Running verifier")
                 filtered_results = []
                 for doc in retriever_results:
                     formatted_doc = doc.page_content if hasattr(doc, 'page_content') else doc.get('page_content', '')
@@ -78,9 +81,14 @@ def initialize_rag_chain(
                             document=formatted_doc
                         )}
                     )
-                    logger.info(f"Verifier LLM response: {response}")
-                    if '<oui>' in response or 'Oui' in response or 'oui' in response:
+                    # extract the text from the response
+                    response = response.content if hasattr(response, 'content') else str(response)
+                    # logger.info(f"Verifier LLM response: {response}")
+                    # if '<oui>' in response or 'Oui' in response or 'oui' in response:
+                    if '<oui>' in response:
+                        logger.info("Verifier accepted document")
                         filtered_results.append(doc)
+                    logger.info(f"Filtered results documents: {filtered_results}")
                 retriever_results = filtered_results
                 logger.info(f"Filtered results: {len(retriever_results)} documents after verification")
             else:

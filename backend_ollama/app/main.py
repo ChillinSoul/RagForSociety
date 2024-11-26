@@ -66,8 +66,8 @@ async def startup_event():
         logger.info("Initializing RAG chain")
         retrieval_chain, final_chain, generate_query_back_and_forth = initialize_rag_chain(
             retriever,
-            automatic_verifier=False,
-            use_verifier=False
+            automatic_verifier=True,
+            use_verifier=True
         )
 
         mc_chain = initialize_multiple_choice_chain()

@@ -59,11 +59,22 @@ CONFIGS = {
             "final": "llama3.1:70b",
             "multiple_choice": "llama3.1:70b"
         }
-    }
+    },
+    "ollama-3.2": {
+        "llm_class": ChatOllama,
+        "models": {
+            "query_generator": "llama3.2-vision:11b",
+            "verifier": "llama3.2-vision:11b",
+            "precision_checker": "llama3.2-vision:11b",
+            "back_and_forth": "llama3.2-vision:11b",
+            "final": "llama3.2-vision:11b",
+            "multiple_choice": "llama3.2-vision:11b"
+        }
+    },
 }
 
 # Set the active configuration here
-ACTIVE_CONFIG = "ollama-hybrid"
+ACTIVE_CONFIG = "groq"
 
 def get_llm(llm_type: str, system_message: str, temperature: float = 0):
     """Get an LLM instance based on the active configuration"""

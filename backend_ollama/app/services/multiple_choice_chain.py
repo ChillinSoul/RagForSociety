@@ -83,7 +83,7 @@ def initialize_multiple_choice_chain():
             raise ValueError('The key "question" is missing from data.')
 
         question = data["question"].strip()
-        logger.info(f"Extracted question: {repr(question)}")
+        # logger.info(f"Extracted question: {repr(question)}")
         context = get_mc_context(data)
 
         try:
@@ -95,7 +95,7 @@ def initialize_multiple_choice_chain():
             
             # Call the LLM
             llm_response = llm.invoke({"input": formatted_prompt})
-            logger.info(f"Raw LLM response: {llm_response}")
+            # logger.info(f"Raw LLM response: {llm_response}")
 
             # Extract the content from the response
             if hasattr(llm_response, 'content'):
@@ -103,7 +103,7 @@ def initialize_multiple_choice_chain():
             else:
                 response_text = str(llm_response)
 
-            logger.info(f"Extracted response text: {response_text}")
+            # logger.info(f"Extracted response text: {response_text}")
 
             # Clean the response text to ensure it's valid JSON
             response_text = response_text.strip()
@@ -116,7 +116,7 @@ def initialize_multiple_choice_chain():
             # Parse the JSON response
             parsed_response = output_parser.parse(response_text)
             result = parsed_response.model_dump()
-            logger.info(f"Successfully parsed response: {result}")
+            # logger.info(f"Successfully parsed response: {result}")
             return result
 
         except ValidationError as e:

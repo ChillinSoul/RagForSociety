@@ -20,7 +20,7 @@ def initialize_rag_chain_global(retrieval, final, mc, back_and_forth):
     generate_query_back_and_forth = back_and_forth
 
 def serialize_document(doc):
-    logger.info(f"Serializing document of type {type(doc)}: {doc}")
+    # logger.info(f"Serializing document of type {type(doc)}: {doc}")
     if hasattr(doc, 'to_dict'):
         return doc.to_dict()
     elif isinstance(doc, tuple) and len(doc) == 2:
@@ -65,7 +65,7 @@ async def get_response(request: QuestionRequest):
             raise HTTPException(status_code=500, detail="RAG chain not initialized")
         
         question = request.question.strip()  # Clean up the question
-        logger.info(f"Received question: {repr(question)}")  # Log the raw question
+        # logger.info(f"Received question: {repr(question)}")
 
         # Get retriever results (now returns a dict with 'question' and 'retriever_results')
         retrieval_output = retrieval_chain.invoke(question)
@@ -74,12 +74,12 @@ async def get_response(request: QuestionRequest):
 
         # Get LLM response
         llm_response = final_chain.invoke({"question": question, "retriever_results": retrieval_results})
-        logger.info(f"LLM response: {llm_response}")
+        # logger.info(f"LLM response: {llm_response}")
 
         # Get multiple-choice response (assuming mc_chain is callable directly)
         logger.info("Running multiple-choice chain")
         mc_response = mc_chain({"question": question, "retriever_results": retrieval_results})
-        logger.info(f"Multiple-choice response: {mc_response}")
+        # logger.info(f"Multiple-choice response: {mc_response}")
         
         # Combine the retriever results, LLM response, and multiple-choice response
         combined_response = {
@@ -121,7 +121,7 @@ async def get_response_back_and_forth(request: QuestionBackAndForthRequest):
             "context": context_string
         })
         
-        logger.info(f"Enhanced query: {enhanced_query}")
+        # logger.info(f"Enhanced query: {enhanced_query}")
         
         # Invoke retrieval_chain with enhanced_query and extract retriever_results
         retrieval_output = retrieval_chain.invoke(enhanced_query)
