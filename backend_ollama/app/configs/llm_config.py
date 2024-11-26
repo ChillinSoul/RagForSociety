@@ -27,12 +27,12 @@ CONFIGS = {
     "chatgpt": {  # Alternative cloud option
         "llm_class": ChatOpenAI,
         "models": {
-            "query_generator": "gpt-3.5-turbo",
-            "verifier": "gpt-4-turbo-preview",
-            "precision_checker": "gpt-4-turbo-preview",
-            "back_and_forth": "gpt-3.5-turbo",
-            "final": "gpt-4-turbo-preview",
-            "multiple_choice": "gpt-4-turbo-preview"
+            "query_generator": "gpt-4o-mini",
+            "verifier": "gpt-4o-mini",
+            "precision_checker": "gpt-4o-mini",
+            "back_and_forth": "gpt-4o-mini",
+            "final": "gpt-4o-mini",
+            "multiple_choice": "gpt-4o-mini"
         }
     },
     "ollama-3.1": {  # Lightweight local configuration
