@@ -43,7 +43,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-file_paths = os.getenv("FILE_PATHS", "data/aides-sociales.json,data/gemeente.json,data/securite-sociale.json").split(',')
+file_paths = os.getenv("FILE_PATHS", "data/aides-sociales.json,data/gemeente.json,data/securite-sociale.json,data/spf.json").split(',')
 
 @app.on_event("startup")
 async def startup_event():

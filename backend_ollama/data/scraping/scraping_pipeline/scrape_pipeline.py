@@ -4,99 +4,121 @@ import os
 import random
 from bs4 import BeautifulSoup
 from markdownify import markdownify as md
-from difflib import SequenceMatcher
 import hashlib
+from datetime import datetime
 
-# Function to load a list of URLs from a file
+class ScrapingProgress:
+    def __init__(self, output_dir):
+        self.output_dir = output_dir
+        self.successful_scrapes = 0
+        self.failed_scrapes = 0
+        self.duplicate_pages = 0
+        self.start_time = datetime.now()
+        
+    def update_stats(self, success=False, duplicate=False):
+        if duplicate:
+            self.duplicate_pages += 1
+        elif success:
+            self.successful_scrapes += 1
+        else:
+            self.failed_scrapes += 1
+            
+    def save_progress(self):
+        stats = {
+            "successful_scrapes": self.successful_scrapes,
+            "failed_scrapes": self.failed_scrapes,
+            "duplicate_pages": self.duplicate_pages,
+            "total_processed": self.successful_scrapes + self.failed_scrapes + self.duplicate_pages,
+            "elapsed_time": str(datetime.now() - self.start_time)
+        }
+        
+        stats_file = os.path.join(self.output_dir, 'scraping_stats.json')
+        with open(stats_file, 'w', encoding='utf-8') as f:
+            json.dump(stats, f, ensure_ascii=False, indent=4)
+        
+        print(f"\nCurrent Progress:")
+        print(f"Successfully scraped: {self.successful_scrapes}")
+        print(f"Failed scrapes: {self.failed_scrapes}")
+        print(f"Duplicate pages: {self.duplicate_pages}")
+        print(f"Time elapsed: {stats['elapsed_time']}\n")
+
 def load_links(filename):
     with open(filename, 'r') as f:
         return [line.strip() for line in f.readlines()]
 
-# Function to save data to a JSON file
 def save_to_json(data, filename, output_dir):
     if not os.path.exists(output_dir):
-        os.makedirs(output_dir)  # Create the directory if it doesn't exist
+        os.makedirs(output_dir)
     filepath = os.path.join(output_dir, filename)
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
-# Function to calculate the hash of a webpage's content
+def append_to_json(data, filename, output_dir):
+    filepath = os.path.join(output_dir, filename)
+    existing_data = {}
+    
+    if os.path.exists(filepath):
+        with open(filepath, 'r', encoding='utf-8') as f:
+            existing_data = json.load(f)
+            
+    existing_data.update(data)
+    
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(existing_data, f, ensure_ascii=False, indent=4)
+
 def get_content_hash(content):
     return hashlib.md5(content.encode('utf-8')).hexdigest()
 
-# Function to fetch raw HTML content, ignore 404 pages, and remove all images
-def fetch_page_data(url, processed_hashes):
+def fetch_page_data(url, processed_hashes, progress):
     try:
         response = requests.get(url)
         
-        # Skip if the page returns a 404 or other errors
         if response.status_code == 404:
             print(f"404 Error: {url}")
+            progress.update_stats(success=False)
             return None
 
-        # Get the raw HTML content
         html_content = response.text
-        
-        # Calculate the hash of the content to detect duplicates
         content_hash = get_content_hash(html_content)
+        
         if content_hash in processed_hashes:
             print(f"Duplicate page found, skipping: {url}")
+            progress.update_stats(duplicate=True)
             return None
         processed_hashes.add(content_hash)
 
-        # Parse the HTML content and remove all <img> tags
         soup = BeautifulSoup(html_content, 'html.parser')
-        for img_tag in soup.find_all('img'):
+        
+        main_content = soup.find('div', id='main-content')
+        if not main_content:
+            print(f"No main-content div found in {url}")
+            progress.update_stats(success=False)
+            return None
+            
+        for img_tag in main_content.find_all('img'):
             img_tag.decompose()
 
-        # Extract the title of the page
         title = soup.title.string if soup.title else "No Title"
 
+        progress.update_stats(success=True)
         return {
             "title": title,
-            "content": str(soup),
+            "content": str(main_content),
             "url": url
         }
     except requests.RequestException as e:
         print(f"Error fetching {url}: {e}")
+        progress.update_stats(success=False)
         return None
 
-# Function to convert HTML content to markdown
 def convert_to_markdown(html_data):
     return md(html_data)
 
-# Function to clean redundant start/end sections from markdowns
-def clean_redundant_sections(markdowns):
-    markdowns_list = list(markdowns.items())
-    random.shuffle(markdowns_list)
-    cleaned_markdowns = {}
-
-    for i in range(0, len(markdowns_list) - 1, 2):
-        url1, md1 = markdowns_list[i]
-        url2, md2 = markdowns_list[i + 1]
-
-        cleaned_md1 = clean_redundant_parts(md1['content'], md2['content'])
-        cleaned_md2 = clean_redundant_parts(md2['content'], md1['content'])
-
-        cleaned_markdowns[url1] = {"title": md1["title"], "content": cleaned_md1, "url": md1["url"]}
-        cleaned_markdowns[url2] = {"title": md2["title"], "content": cleaned_md2, "url": md2["url"]}
-
-    return cleaned_markdowns
-
-# Helper function to clean redundant parts using sequence matching
-def clean_redundant_parts(markdown1, markdown2):
-    matcher_start = SequenceMatcher(None, markdown1, markdown2)
-    match_start = matcher_start.find_longest_match(0, len(markdown1), 0, len(markdown2))
-
-    if match_start.size > 20:
-        cleaned_markdown = markdown1[match_start.size:]
-    else:
-        cleaned_markdown = markdown1
-
-    return cleaned_markdown
-
-# Function to save a random markdown as a .md file
 def save_random_markdown_file(markdowns, output_dir):
+    if not markdowns:
+        print("No markdown data available to save random file")
+        return
+        
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -111,50 +133,52 @@ def save_random_markdown_file(markdowns, output_dir):
 
     print(f"Random markdown saved to {filepath}")
 
-# Main pipeline function to scrape, convert, clean, and save markdown
 def scrape_pipeline(link_file, output_dir='output'):
-    # Load the list of links
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        
     links = load_links(link_file)
-
-    # Set to track hashes of page content to avoid duplicates
     processed_hashes = set()
+    progress = ScrapingProgress(output_dir)
+    
+    print(f"Starting to process {len(links)} links...")
 
-    # Step 1: Scrape pages and remove images, ignoring 404 and duplicates
-    raw_data = {}
-    for link in links:
-        page_data = fetch_page_data(link, processed_hashes)
+    for i, link in enumerate(links, 1):
+        print(f"\nProcessing link {i}/{len(links)}: {link}")
+        
+        # Step 1: Scrape page and extract main-content div
+        page_data = fetch_page_data(link, processed_hashes, progress)
         if page_data:
-            raw_data[link] = page_data
+            # Save raw HTML incrementally
+            append_to_json({link: page_data}, 'raw_pages.json', output_dir)
+            
+            # Convert to markdown and save incrementally
+            markdown_content = convert_to_markdown(page_data['content'])
+            markdown_data = {
+                link: {
+                    "title": page_data["title"],
+                    "content": markdown_content,
+                    "url": page_data["url"]
+                }
+            }
+            append_to_json(markdown_data, 'markdown_pages.json', output_dir)
+        
+        # Save progress after each page
+        if i % 5 == 0 or i == len(links):  # Save stats every 5 pages and at the end
+            progress.save_progress()
 
-    # Save raw HTML data to a JSON file
-    save_to_json(raw_data, 'raw_pages.json', output_dir)
-
-    # Step 2: Convert HTML to markdown and save to a new JSON
-    markdown_data = {}
-    for url, page_data in raw_data.items():
-        markdown_content = convert_to_markdown(page_data['content'])
-        markdown_data[url] = {
-            "title": page_data["title"],
-            "content": markdown_content,
-            "url": page_data["url"]
-        }
+    # Final progress update
+    progress.save_progress()
     
-    save_to_json(markdown_data, 'markdown_pages.json', output_dir)
-
-    # Step 3: Clean redundant sections from markdowns
-    cleaned_markdown_data = clean_redundant_sections(markdown_data)
-    
-    save_to_json(cleaned_markdown_data, 'cleaned_markdown_pages.json', output_dir)
-
-    # Step 4: Randomly save one markdown as a .md file
-    save_random_markdown_file(cleaned_markdown_data, output_dir)
+    # Save a random markdown file at the end
+    try:
+        with open(os.path.join(output_dir, 'markdown_pages.json'), 'r', encoding='utf-8') as f:
+            all_markdowns = json.load(f)
+            save_random_markdown_file(all_markdowns, output_dir)
+    except FileNotFoundError:
+        print("No markdown files were generated")
 
 if __name__ == '__main__':
-    # Specify the input file containing the list of links to scrape
-    link_file = 'unique_links.txt'  # Modify this with your link file
-
-    # Specify the output directory where all files should be saved
-    output_dir = 'sécurité_sociale'  # Modify this to your desired output directory
-
-    # Run the pipeline
+    link_file = 'unique_links.txt'
+    output_dir = 'sécurité_sociale'
     scrape_pipeline(link_file, output_dir)

@@ -1,4 +1,3 @@
-// app/components/queryBar.tsx
 import React, { useState, useRef } from "react";
 import { Send, Mic, MicOff } from "lucide-react";
 interface QueryBarProps {

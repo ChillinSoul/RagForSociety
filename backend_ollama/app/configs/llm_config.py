@@ -16,11 +16,11 @@ CONFIGS = {
     "groq": {  # Recommended for best performance/cost ratio
         "llm_class": ChatGroq,
         "models": {
-            "query_generator": "llama-3.2-90b-text-preview",
-            "verifier": "llama-3.2-90b-text-preview",
-            "precision_checker": "llama-3.2-90b-text-preview",
-            "back_and_forth": "llama-3.2-90b-text-preview",
-            "final": "llama-3.2-90b-text-preview",
+            "query_generator": "llama-3.2-90b-vision-preview",
+            "verifier": "llama-3.2-90b-vision-preview",
+            "precision_checker": "llama-3.2-90b-vision-preview",
+            "back_and_forth": "llama-3.2-90b-vision-preview",
+            "final": "llama-3.2-90b-vision-preview",
             "multiple_choice": "llama-3.1-70b-versatile"
         }
     },
@@ -38,40 +38,40 @@ CONFIGS = {
     "ollama-3.1": {  # Lightweight local configuration
         "llm_class": ChatOllama,
         "models": {
-            "query_generator": "llama2:8b",
-            "verifier": "llama2:8b",
-            "precision_checker": "llama2:8b",
-            "back_and_forth": "llama2:8b",
-            "final": "llama2:8b",
-            "multiple_choice": "llama2:8b"
+            "query_generator": "llama3.1",
+            "verifier": "llama3.1",
+            "precision_checker": "llama3.1",
+            "back_and_forth": "llama3.1",
+            "final": "llama3.1",
+            "multiple_choice": "llama3.1"
         }
     },
     "ollama-3.1-70b": {  # Full local configuration
         "llm_class": ChatOllama,
         "models": {
-            "query_generator": "llama2:70b",
-            "verifier": "llama2:70b",
-            "precision_checker": "llama2:70b",
-            "back_and_forth": "llama2:70b",
-            "final": "llama2:70b",
-            "multiple_choice": "llama2:70b"
+            "query_generator": "llama3.1:70b",
+            "verifier": "llama3.1:70b",
+            "precision_checker": "llama3.1:70b",
+            "back_and_forth": "llama3.1:70b",
+            "final": "llama3.1:70b",
+            "multiple_choice": "llama3.1:70b"
         }
     },
     "ollama-hybrid": {  # Balanced local configuration
         "llm_class": ChatOllama,
         "models": {
-            "query_generator": "llama2:8b",
-            "verifier": "llama2:8b",
-            "precision_checker": "llama2:70b",
-            "back_and_forth": "llama2:8b",
-            "final": "llama2:70b",
-            "multiple_choice": "llama2:70b"
+            "query_generator": "llama3.1",
+            "verifier": "llama3.1",
+            "precision_checker": "llama3.1:70b",
+            "back_and_forth": "llama3.1",
+            "final": "llama3.1:70b",
+            "multiple_choice": "llama3.1:70b"
         }
     }
 }
 
 # Set the active configuration here
-ACTIVE_CONFIG = "groq"  # Recommended for best performance
+ACTIVE_CONFIG = "groq"  # groq recommended for best performance
 
 def get_llm(llm_type: str, system_message: str, temperature: float = 0):
     """Get an LLM instance based on the active configuration"""

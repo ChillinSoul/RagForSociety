@@ -1,11 +1,3 @@
-https://finances.belgium.be#skip-to-main-content
-https://finances.belgium.be/en
-https://finances.belgium.be/de
-https://finances.belgium.be/fr
-https://finances.belgium.be/fr/phishing
-https://finances.belgium.be/fr/contact
-https://finances.belgium.be/fr/index
-https://finances.belgium.be
 https://finances.belgium.be/fr/particuliers/declaration_impot/declaration/rentrer-la-declaration
 https://finances.belgium.be/fr/particuliers/declaration_impot/declaration/brochure-explicative
 https://finances.belgium.be/fr/particuliers/declaration_impot/declaration/proposition-de-declaration-simplifiee
@@ -518,7 +510,3 @@ https://finances.belgium.be/fr/experts-partenaires/donnees-ouvertes-patrimoine/p
 https://finances.belgium.be/fr/experts-partenaires/partenaires-internationaux/partenaires-agpd
 https://finances.belgium.be/fr/entreprises/accises
 https://finances.belgium.be/fr/independants_professions_liberales/caisses_enregistreuses
-https://finances.belgium.be/fr/biblioth%C3%A8que
-https://finances.belgium.be/fr/fuite-de-donnees
-https://finances.belgium.be/fr/disclaimer
-https://finances.belgium.be/fr/d%C3%A9claration-daccessibilit%C3%A9
